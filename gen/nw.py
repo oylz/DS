@@ -123,19 +123,31 @@ def _create_network(incoming, num_classes, reuse=None, l2_normalize=True,
     return features, logits
 
 
-def _network_factory(num_classes, is_training, weight_decay=1e-8):
-
-    def factory_fn(image, reuse, l2_normalize):
-            with slim.arg_scope([slim.batch_norm, slim.dropout],
-                                is_training=is_training):
-                with slim.arg_scope([slim.conv2d, slim.fully_connected,
-                                     slim.batch_norm, slim.layer_norm],
-                                    reuse=reuse):
-                    features, logits = _create_network(
-                        image, num_classes, l2_normalize=l2_normalize,
-                        reuse=reuse, create_summaries=is_training,
-                        weight_decay=weight_decay)
-                    return features, logits
-
-    return factory_fn
+#def _network_factory(num_classes, is_training, weight_decay=1e-8):
+#
+#    def factory_fn(image, reuse, l2_normalize):
+#            with slim.arg_scope([slim.batch_norm, slim.dropout],
+#                                is_training=is_training):
+#                with slim.arg_scope([slim.conv2d, slim.fully_connected,
+#                                     slim.batch_norm, slim.layer_norm],
+#                                    reuse=reuse):
+#                    features, logits = _create_network(
+#                        image, num_classes, l2_normalize=l2_normalize,
+#                        reuse=reuse, create_summaries=is_training,
+#                        weight_decay=weight_decay)
+#                    return features, logits
+#
+#    return factory_fn
+def factory_fn(image, reuse, l2_normalize):
+        with slim.arg_scope([slim.batch_norm, slim.dropout],
+                            is_training=False):
+            with slim.arg_scope([slim.conv2d, slim.fully_connected,
+                                 slim.batch_norm, slim.layer_norm],
+                                reuse=reuse):
+                features, logits = _create_network(
+                    image, 1501, l2_normalize=l2_normalize,
+                    reuse=reuse, create_summaries=False,
+                    weight_decay=1e-8)
+                return features, logits
 #========end====network==========================
+#num_classes=1501, is_training=False, weight_decay=1e-8
