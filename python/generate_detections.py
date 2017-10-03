@@ -3,8 +3,15 @@ import numpy as np
 import cv2
 
 import gen.enc as enc
+from io import StringIO
 
 class Gd(object):
+    def __init__(self):
+        print("hahahah0")
+        self.image_shape = 128, 64, 3
+        print("hahahah1")
+        self.enc = enc.Enc()
+        
     def _extract_image_patch(self, image, bbox, patch_shape):
         """Extract image patch from bounding box.
     
@@ -54,9 +61,10 @@ class Gd(object):
     
     
     def preEncode(self, model_filename):
-        self.image_shape = 128, 64, 3
-        self.enc = enc.Enc()
+        print("hahahah2")
         self.enc.preEncode(self.image_shape, 32, model_filename, "cosine")
+        print("hahahah")
+        return 1
         #def encoder(image, box):
         #    image_patches = []
         #    t1 = int(round(time.time() * 1000))
@@ -83,8 +91,23 @@ class Gd(object):
         image_patches = np.asarray(image_patches)
         return self.enc.encode(image_patches)
     
-    
-        
+    def encodeForCpp(self, img, cols, rows, boxesStr):
+        print("mmmmmmm0")
+        img_data = np.reshape(img, (cols, rows, 3)).astype(np.uint8)
+        #cv2.imshow("img_data", img_data)
+        #cv2.waitKey()
+        print("mmmmmmm1")
+        boxes = np.loadtxt(StringIO(boxesStr))
+        print(boxes.shape)
+        if(boxes.shape == (4,)):
+            boxes = boxes[np.newaxis, :]
+        print(boxes.shape)    
+        print("mmmmmmm2")
+        return self.encode(img_data, boxes)
+        #tmp = self.encode(img_data, boxes)
+        #print("mmmmmmm3")
+        #print(tmp)
+        #return tmp
         
         
         

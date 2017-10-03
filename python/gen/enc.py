@@ -3,6 +3,8 @@ import tensorflow.contrib.slim as slim
 import numpy as np
 import gen.nw as nw
 
+import time
+
 class Enc(object):
     def _preprocess(self, image, is_training=False, enable_more_augmentation=True):
         image = image[:, :, ::-1]  # BGR to RGB
@@ -41,7 +43,8 @@ class Enc(object):
             tf.cast(self.image_var, tf.float32))
     
         l2_normalize = loss_mode == "cosine"
-        self.feature_var, _ = nw.factory_fn(
+        self.nw = nw.Nw()
+        self.feature_var, _ = self.nw.factory_fn(
             preprocessed_image_var, l2_normalize=l2_normalize, reuse=None)
         self.feature_dim = self.feature_var.get_shape().as_list()[-1]
     
@@ -54,9 +57,12 @@ class Enc(object):
             
     def encode(self, data_x):
         out = np.zeros((len(data_x), self.feature_dim), np.float32)
+        enct1 = int(round(time.time() * 1000))
         self._run_in_batches(
             lambda x: self.session.run(self.feature_var, feed_dict=x),
             {self.image_var: data_x}, out, self.batch_size)
+        enct2 = int(round(time.time() * 1000))
+        print("one frame cost time:t2-t1:%s" % (str(enct2-enct1)))        
         return out
     
     
