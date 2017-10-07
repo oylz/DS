@@ -14,11 +14,308 @@
 
 #include "../../StrCommon.h"
 
-typedef std::vector<float> FEATURE;
 
+#include "../deepsort/Detection.h"
+
+typedef std::vector<double> DSR;
+typedef std::vector<DSR> DSRS;
+typedef std::vector<int> IDSR;
+typedef std::vector<IDSR> IDSRS;
+
+class Tpy {
+public:
+	static IDSRS PPI(PyObject *pyResult) {
+		IDSRS re;
+		PyArrayObject *np_ret = reinterpret_cast<PyArrayObject*>(pyResult);
+		// Convert back to C++ array and print.
+		int COUNT = PyArray_SHAPE(np_ret)[0];
+		int LEN = PyArray_SHAPE(np_ret)[1];
+		int *c_out = reinterpret_cast<int*>(PyArray_DATA(np_ret));
+		printf("=====begin=================\n");
+		for (int i = 0; i < COUNT; i++) {
+			IDSR dsr;
+			for (int j = 0; j < LEN; j++) {
+				if (j>0) {
+					printf(",");
+				}
+				int tmp = c_out[i*LEN + j];
+				dsr.push_back(tmp);
+				std::cout << tmp;
+				if (j == LEN - 1) {
+					printf("\n");
+				}
+			}
+			re.push_back(dsr);
+		}
+		printf("=====end=================\n");
+		return re;
+	}
+
+	static DSRS PP(PyObject *pyResult, bool onlyone = false) {
+		DSRS re;
+		PyArrayObject *np_ret = reinterpret_cast<PyArrayObject*>(pyResult);
+		// Convert back to C++ array and print.
+		int COUNT = PyArray_SHAPE(np_ret)[0];
+		int LEN = PyArray_SHAPE(np_ret)[1];
+		if (onlyone) {
+			LEN = COUNT;
+			COUNT = 1;
+		}
+		double *c_out = reinterpret_cast<double*>(PyArray_DATA(np_ret));
+		printf("=====begin=================\n");
+		std::cout.precision(20);
+		for (int i = 0; i < COUNT; i++) {
+			DSR dsr;
+			for (int j = 0; j < LEN; j++) {
+				if (j>0) {
+					printf(",");
+				}
+				double tmp = c_out[i*LEN + j];
+				dsr.push_back(tmp);
+				//printf("%llf", tmp);
+				std::cout << tmp;
+				if (j == LEN - 1) {
+					printf("\n");
+				}
+			}
+			re.push_back(dsr);
+		}
+		printf("=====end=================\n");
+		return re;
+	}
+	static void TDSBOX(const DSBOX &xyah, PyObject *args, int pos) {
+		npy_intp IMGSHAPE[1] = { 4 };
+		float *a = (float *)xyah.data();
+		PyByteArrayObject *imga = reinterpret_cast<PyByteArrayObject *>
+			(PyArray_SimpleNewFromData(1,
+				IMGSHAPE,
+				NPY_FLOAT,
+				reinterpret_cast<void *>(a)));
+		PyTuple_SetItem(args, pos, reinterpret_cast<PyObject *>(imga));
+	}
+	static void TMEAN(const MEAN &mean, PyObject *args, int pos) {
+		npy_intp IMGSHAPE[1] = { 8 };
+		float *a = (float *)mean.data();
+		PyByteArrayObject *imga = reinterpret_cast<PyByteArrayObject *>
+			(PyArray_SimpleNewFromData(1,
+				IMGSHAPE,
+				NPY_FLOAT,
+				reinterpret_cast<void *>(a)));
+		PyTuple_SetItem(args, pos, reinterpret_cast<PyObject *>(imga));
+	}
+	static void TVAR(const VAR &var, PyObject *args, int pos) {
+		npy_intp IMGSHAPE[1] = { 64 };
+		float *a = (float *)var.data();
+		PyByteArrayObject *imga = reinterpret_cast<PyByteArrayObject *>
+			(PyArray_SimpleNewFromData(1,
+				IMGSHAPE,
+				NPY_FLOAT,
+				reinterpret_cast<void *>(a)));
+		PyTuple_SetItem(args, pos, reinterpret_cast<PyObject *>(imga));
+	}
+	static void TDSBOXS(const DSBOXS &xyahs, PyObject *args, int pos) {
+		int rows = xyahs.rows();
+		npy_intp IMGSHAPE[1] = { 4 * rows };
+		float *a = (float *)xyahs.data();
+		PyByteArrayObject *imga = reinterpret_cast<PyByteArrayObject *>
+			(PyArray_SimpleNewFromData(1,
+				IMGSHAPE,
+				NPY_FLOAT,
+				reinterpret_cast<void *>(a)));
+		PyTuple_SetItem(args, pos, reinterpret_cast<PyObject *>(imga));
+	}
+	static void TMATRIX(const DYNAMICM &xyahs, PyObject *args, int pos) {
+		int rows = xyahs.rows();
+		int cols = xyahs.cols();
+		npy_intp IMGSHAPE[1] = { cols * rows };
+		float *a = (float *)xyahs.data();
+		PyByteArrayObject *imga = reinterpret_cast<PyByteArrayObject *>
+			(PyArray_SimpleNewFromData(1,
+				IMGSHAPE,
+				NPY_FLOAT,
+				reinterpret_cast<void *>(a)));
+		PyTuple_SetItem(args, pos, reinterpret_cast<PyObject *>(imga));
+	}
+
+	static PyObject *PreArg(int count, PyObject *obj) {
+		PyObject *args = PyTuple_New(count);
+		// self
+		PyTuple_SetItem(args, 0, Py_BuildValue("O", obj));
+		return args;
+	}
+	static PyObject *Call(PyObject *fun, PyObject *args) {
+		PyObject *pyResult = NULL;
+		try {
+			pyResult = PyObject_CallObject(fun, args);
+		}
+		catch (std::exception &e) {
+			std::string err(e.what());
+			printf("initiate error:%s\n", err.c_str());
+		}
+		return pyResult;
+	}
+	static std::pair<MEAN, VAR> TResult(PyObject *pyResult) {
+		std::pair<MEAN, VAR> re;
+		PyObject *b1, *b2;
+		PyArg_ParseTuple(pyResult, "OO", &b1, &b2);
+		//
+		MEAN mean;
+		DSRS dsrs = PP(b1, true);
+		if (dsrs.empty()) {
+			return re;
+		}
+		DSR &dsr = dsrs[0];
+		for (int i = 0; i < dsr.size(); i++) {
+			mean(0, i) = dsr[i];
+		}
+		//
+		VAR var;
+		dsrs = PP(b2);
+		if (dsrs.size() < 8) {
+			return re;
+		}
+		for (int i = 0; i < dsrs.size(); i++) {
+			DSR dsr1 = dsrs[i];
+			for (int j = 0; j < dsr1.size(); j++) {
+				var(i, j) = dsr1[j];
+			}
+		}
+		re.first = mean;
+		re.second = var;
+		return re;
+	}
+};
+class KF {
+private:
+	static KF *self_;
+	PyObject *kf_ = NULL;
+	PyObject *gating_distance_ = NULL;
+	PyObject *initiate_ = NULL;
+	PyObject *predict_ = NULL;
+	PyObject *update_ = NULL;
+	PyObject *linearAssignment_ = NULL;
+private:
+	KF() {
+
+	}
+public:
+	static KF *Instance() {
+		if (self_ == NULL) {
+			self_ = new KF();
+		}
+		return self_;
+	}
+	Eigen::Matrix<float, -1, 2> LinearAssignmentForCpp(
+					const DYNAMICM &cost_matrix) {
+		PyObject *args = Tpy::PreArg(4, kf_);
+		Tpy::TMATRIX(cost_matrix, args, 1);
+		PyTuple_SetItem(args, 2, Py_BuildValue("i", cost_matrix.rows()));
+		PyTuple_SetItem(args, 3, Py_BuildValue("i", cost_matrix.cols()));
+		PyObject *pyResult = Tpy::Call(linearAssignment_, args);
+		IDSRS dsrs = Tpy::PPI(pyResult);
+		int pos = 0;
+		Eigen::Matrix<float, -1, 2> re(dsrs.size(), 2);
+		for (int i = 0; i < dsrs.size(); i++) {
+			IDSR &dsr = dsrs[i];
+			for (int j = 0; j < dsr.size(); j++) {
+				re(i, j) = dsr[j];
+			}
+		}
+		
+
+		return re;
+	}
+	Eigen::Matrix<float, 1, -1> gating_distance(
+		const MEAN &mean,
+		const VAR &covariance,
+		const DSBOXS &measurements,
+		bool only_position) const{
+		
+		PyObject *args = Tpy::PreArg(5, kf_);
+		Tpy::TMEAN(mean, args, 1);
+		Tpy::TVAR(covariance, args, 2);
+		Tpy::TDSBOXS(measurements, args, 3);
+		PyTuple_SetItem(args, 4, Py_BuildValue("i", only_position));
+		PyObject *pyResult = Tpy::Call(gating_distance_, args);
+		DSRS dsrs = Tpy::PP(pyResult, true);// xyz 调试所得 设onlyone=true
+		int pos = 0;
+		int count = 0;
+		for (int i = 0; i < dsrs.size(); i++) {
+			DSR &dsr = dsrs[i];
+			for (int j = 0; j < dsr.size(); j++) {
+				count++;
+			}
+		}
+		Eigen::Matrix<float, 1, -1> re(1, count);
+		for (int i = 0; i < dsrs.size(); i++) {
+			DSR &dsr = dsrs[i];
+			for (int j = 0; j < dsr.size(); j++) {
+				re(0, pos++) = dsr[j];
+			}
+		}
+
+		return re;
+	}
+	std::pair<MEAN, VAR> initiate(const DSBOX &xyah){
+		std::pair<MEAN, VAR> re;
+
+		PyObject *args = Tpy::PreArg(2, kf_);
+		Tpy::TDSBOX(xyah, args, 1);
+		PyObject *pyResult = Tpy::Call(initiate_, args);
+		re = Tpy::TResult(pyResult);
+		return re;
+	}
+	std::pair<MEAN, VAR> predict(const MEAN &mean, const VAR &var) const{
+		std::pair<MEAN, VAR> re;
+		PyObject *args = Tpy::PreArg(3, kf_);
+		Tpy::TMEAN(mean, args, 1);
+		Tpy::TVAR(var, args, 2);
+		PyObject *pyResult = Tpy::Call(predict_, args);
+		re = Tpy::TResult(pyResult);
+
+		return re;
+	}
+	std::pair<MEAN, VAR> update(
+		const MEAN &mean,
+		const VAR &covariance,
+		const DSBOX &xyah) const{
+		std::pair<MEAN, VAR> re;
+		PyObject *args = Tpy::PreArg(4, kf_);
+		Tpy::TMEAN(mean, args, 1);
+		Tpy::TVAR(covariance, args, 2);
+		Tpy::TDSBOX(xyah, args, 3);
+		PyObject *pyResult = Tpy::Call(update_, args);
+		re = Tpy::TResult(pyResult);
+
+		return re;
+	}
+	bool Init() {
+		PyObject *pyModule = PyImport_ImportModule("deep_sort.kalman_filter");
+		if (!pyModule) {
+			printf("Can not open python module\n");
+			return false;
+		}
+		PyObject *kfi = PyObject_GetAttrString(pyModule, "KalmanFilter");
+		kf_ = PyObject_CallObject(kfi, NULL);
+
+		
+		gating_distance_ = PyObject_GetAttrString(kfi, "gating_distance");
+		initiate_ = PyObject_GetAttrString(kfi, "initiate");
+		predict_ = PyObject_GetAttrString(kfi, "predict");
+		update_ = PyObject_GetAttrString(kfi, "update");
+		linearAssignment_ = PyObject_GetAttrString(kfi, "LinearAssignmentForCpp");
+	}
+};
 class FeatureGetter {
-	friend class LossMgr;
-protected:
+private:
+	static FeatureGetter *self_;
+public:
+	static FeatureGetter *Instance() {
+		if (self_ == NULL) {
+			self_ = new FeatureGetter();
+		}
+		return self_;
+	}
 	bool Init() {
 		Py_Initialize();
 		if (!Py_IsInitialized()) {
@@ -38,6 +335,7 @@ protected:
 
 		PreEnc(gdi);
 		enc_ = PyObject_GetAttrString(gdi, "encodeForCpp");
+		ii();
 	}
 	void Get(const cv::Mat &img, const std::vector<cv::Rect> &rcs,
 		std::vector<FEATURE> &fts) {
@@ -68,8 +366,7 @@ private:
 		PyTuple_SetItem(args, 0, Py_BuildValue("O", gd_));
 
 		// img
-		PyByteArrayObject *imga;
-		ii();
+		//ii();
 		int LLL = img.cols*img.rows * 3;
 		npy_intp IMGSHAPE[1] = { LLL };
 		int nr = img.rows;
@@ -90,7 +387,7 @@ private:
 				buf[pos++] = *inData++;
 			}
 		}
-		imga = reinterpret_cast<PyByteArrayObject *>
+		PyByteArrayObject *imga = reinterpret_cast<PyByteArrayObject *>
 			(PyArray_SimpleNewFromData(1, IMGSHAPE, NPY_BYTE, reinterpret_cast<void *>(buf)));
 		PyTuple_SetItem(args, 1, reinterpret_cast<PyObject *>(imga));
 
@@ -145,7 +442,7 @@ private:
 					if (j == LEN - 1) {
 						printf("\n");
 					}*/
-					ft.push_back(c_out[i*LEN + j]);
+					ft(0, j) = c_out[i*LEN + j];
 				}
 				fts.push_back(ft);
 				printf("---e---------------\n");

@@ -1,40 +1,45 @@
-#include "./Tracker/Ctracker.h"
+#include "Tracker/defines.h"
+#include "./deepsort/tracker.h"
 #include "StrCommon.h"
-#include "Tracker/ds/LossMgr.h"
+#include "Tracker/ds/FeatureGetter.h"
+#include "deepsort/tracker.h"
 
-LossMgr *LossMgr::self_ = NULL;
+NearestNeighborDistanceMetric *NearestNeighborDistanceMetric::self_ = NULL;
+FeatureGetter *FeatureGetter::self_ = NULL;
+KF *KF::self_ = NULL;
 
-CTracker *_tt = NULL;
+
+TTracker *_tt = NULL;
 void DrawTrack(cv::Mat frame,
                    const KalmanTracker& track
                    ){
+	if (!track.is_confirmed() || track.time_since_update_ > 0) {
+		return;
+	}
+	DSBOX box = track.to_tlwh();
+	cv::Rect rc;
+	rc.x = box(0);
+	rc.y = box(1);
+	rc.width = box(2);
+	rc.height = box(3);
 	CvScalar clr = cvScalar(0, 255, 0);
-	cv::Rect rc = track.GetLastRect();
-		//printf("lastRc(%d, %d, %d, %d)\n", rc.x, rc.y, rc.width, rc.height);
-        cv::rectangle(frame, rc, clr);
-	std::string disp = toStr((int)track.m_trackID);
+    cv::rectangle(frame, rc, clr);
+	std::string disp = toStr((int)track.track_id);
 	cv::putText(frame, 
 		disp, 
 		cvPoint(rc.x, rc.y), 
 		CV_FONT_HERSHEY_SIMPLEX, 
 		0.6, 
 		cv::Scalar(0, 0, 255));
-
+	
 }
 void DrawData(cv::Mat frame){
-		KalmanTrackers &kalmanTrackers =
-			_tt->GetKalmanTrackersFor_MouseExample_MonitorDetect_FaceDetector_PedestrianDetector();
+	std::vector<KalmanTracker*> &kalmanTrackers =
+		_tt->kalmanTrackers_;
 
-        for (const auto& track : kalmanTrackers){
-            /*if (!track->IsRobust(8,                           // Minimal trajectory size
-                                0.4f,                        // Minimal ratio raw_trajectory_points / trajectory_lenght
-                                cv::Size2f(0.1f, 8.0f))      // Min and max ratio: width / height
-                    ){
-			continue;
-		}
-		*/
-            DrawTrack(frame, *track);
-        }
+    for (const auto& track : kalmanTrackers){
+        DrawTrack(frame, *track);
+    }
 }
 
 
@@ -124,18 +129,26 @@ void CB(Mat &frame, int num){
 	}
 
 
-        std::vector<Point_t> centers;
-        regions_t regions;
-        for (auto rect : rcs)
-        {
-            centers.push_back((rect.tl() + rect.br()) / 2);
-            regions.push_back(rect);
-        }
-	//Mat grayFrame;
-	//cv::cvtColor(frame, grayFrame, cv::COLOR_BGR2GRAY);
-    _tt->Update(centers, regions, frame);
+	std::vector<Detection> dets;
+	std::vector<FEATURE> fts;
+	FeatureGetter::Instance()->Get(frame, rcs, fts);
+
+	for (int i = 0; i < rcs.size(); i++){	
+		DSBOX box;
+		cv::Rect rc = rcs[i];
+		box(0) = rc.x;
+		box(1) = rc.y;
+		box(2) = rc.width;
+		box(3) = rc.height;
+		Detection det(box, 1, fts[i]);
+		dets.push_back(det);
+	}
+	if (num == 117) {
+		std::cout << "117\n";
+	}
+    _tt->update(dets);
 	DrawData(frame);
-	(*_vw) << frame;
+	//(*_vw) << frame;
 	if(_isShow){
 		std::string disp = "frame";
 		resize(mm, mm, Size(mm.cols/2, mm.rows/2));
@@ -160,29 +173,38 @@ void Go() {
 }
 
 int main(int argc, char **argv){
+	if(0){
+		Eigen::Matrix<float, -1, 4> test;
+		Eigen::Matrix<float, 1, 4, Eigen::RowMajor> row;
+		row(0, 0) = 1;
+		row(0, 1) = 2;
+		row(0, 2) = 3;
+		row(0, 3) = 4;
+		test.resize(test.rows() + 1, 4);
+		test.row(0) = row;
+		std::cout << test << std::endl << "-----------" << std::endl;
+		test.resize(test.rows()+1, 4);
+		test.row(1) = row;
+		std::cout << test << std::endl << "-----------" << std::endl;
+		test.resize(test.rows() + 1, 4);
+		test.row(2) = row;
+		std::cout << test << std::endl << "-----------" << std::endl;
+	}
 	if (argc < 2) {
 		printf("usage:\n./tt showornot(0/1)\n");
 		return 0;
 	}
 	_isShow = toInt(argv[1]);
-	LossMgr::Instance()->Init(_isShow, 0.72);
-
-	TrackCtrl tc(DT_DistJaccard,
-		KT_TypeUnscented,//KT_TypeUnscented,//KT_TypeLinear,//KT_TypeUnscented,
-		0.3f, // Delta time for Kalman filter
-		0.1f, // Accel noise magnitude for Kalman filter
-		0.8f, // Distance threshold between region and object on two frames
-		1 // Maximum allowed skipped frames
-	);
-
-	_tt = new CTracker(tc);
-
+	FeatureGetter::Instance()->Init();
+	KF::Instance()->Init();
+	_tt = new TTracker();
+	NearestNeighborDistanceMetric::Instance()->Init(0.2, 100);
 
 	//_imgDir = "e:/code/deep_sort-master/MOT16/ff/fr/img1/";
 	//_rcFile = "e:/code/deep_sort-master/MOT16/ff/fr/det/det.txt";
-	_imgDir = "e:/code/deep_sort-master/MOT16/tt/xyz/img1/";
-	_rcFile = "e:/code/deep_sort-master/MOT16/tt/xyz/det/det.txt";
-	_imgCount = 680;// 750;// 680;
+	_imgDir = "e:/code/deep_sort-master/MOT16/tt/xyz2/img1/";
+	_rcFile = "e:/code/deep_sort-master/MOT16/tt/xyz2/det/det.txt";
+	_imgCount = 750;// 2001;// 750;// 680;
 	Go();
 	return 0;
 }

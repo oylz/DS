@@ -14,32 +14,6 @@ void CTracker::Update(
         const std::vector<Point_t>& detections,
         const regions_t& regions,
         cv::Mat frame){
-	// check if the same regions, and not update
-	while (0) {
-		if (regions.empty()) {
-			break;
-		}
-		if (lastRgs_.size() != regions.size()) {
-			break;
-		}
-		bool br = false;
-		for (int i = 0; i < regions.size(); i++) {
-			CRegion rg1 = regions[i];
-			CRegion rg2 = lastRgs_[i];
-			if (rg1.m_rect != rg2.m_rect) {
-				br = true;
-				break;
-			}
-		}
-		if (br) {
-			break;
-		}
-		// is the same regions
-		//for (size_t i = 0; i < kalmanTrackres_.size(); i++) {
-		//	kalmanTrackres_[i]->Update(CRegion(), frame, true);
-		//}
-		return;
-	}
 	static cv::Mat lossFrame;
 	static std::map<int, int> lastFalseIds;
 
@@ -156,7 +130,7 @@ void CTracker::Update(
 							rr.x + rr.width<=frame.cols - 10 &&
 							rr.y + rr.height<=frame.rows - 10) {
 							LossMgr::Instance()->AddLoss(kalmanTrackres_[i]->m_trackID,
-								kalmanTrackres_[i]->lastFaces_);
+								rr);
 						}
 
 						kalmanTrackres_.erase(kalmanTrackres_.begin() + i);
@@ -174,7 +148,8 @@ void CTracker::Update(
 		}
 		break;
     }// end while(1)A
-	LossMgr::Instance()->CommitAddLoss();
+	LossMgr::Instance()->CommitAddLoss(frame.clone());
+
     // -----------------------------------
     // Search for unassigned detects and start new tracks for them.
     // -----------------------------------
@@ -204,7 +179,7 @@ void CTracker::Update(
 														  frame.cols, frame.rows));
 				int pos = kalmanTrackres_.size() -1;
 				kalmanTrackres_[pos]->m_skippedFrames = 0;
-				kalmanTrackres_[pos]->Update(regions[i], frame, false);
+				kalmanTrackres_[pos]->Update(regions[i], frame);
 			
 			}
 		}
@@ -218,10 +193,9 @@ void CTracker::Update(
         if (assignment[i] != -1) // If we have assigned detect, then update using its coordinates,
         {
 			kalmanTrackres_[i]->m_skippedFrames = 0;
-			kalmanTrackres_[i]->Update(regions[assignment[i]], frame, false);
+			kalmanTrackres_[i]->Update(regions[assignment[i]], frame);
         }
     }
     frame.copyTo(m_prevFrame);
-	lastRgs_ = regions;
 	printf("==END==============================================================================================================================UUUUUUU\n");
 }
