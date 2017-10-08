@@ -1,6 +1,6 @@
 #ifndef _KALMANTRACKERH_
 #define _KALMANTRACKERH_
-#include "../Tracker/ds/FeatureGetter.h"
+#include "FeatureGetter.h"
 
 enum TrackState{
     TS_NONE = 0,

@@ -4,7 +4,8 @@
 #include "Detection.h"
 #include <Eigen>
 #include "KalmanTracker.h"
-#include "../Tracker/ds/FeatureGetter.h"
+#include "FeatureGetter.h"
+#include "HungarianOper.h"
 
 const static int INFTY_COST = 1e+5;
 struct RR {
@@ -67,7 +68,7 @@ public:
         // 5x5
         DYNAMICM cost_matrix = getCostMarixFun(
             tracks, detections, &track_indices, &detection_indices);
-		std::cout << "\n----mmmmm----\n" << cost_matrix << "\n----vvvvv-----\n" << std::endl;
+		//std::cout << "\n----mmmmm----\n" << cost_matrix << "\n----vvvvv-----\n" << std::endl;
 		for (int i = 0; i < cost_matrix.rows(); i++) {
 			for (int j = 0; j < cost_matrix.cols(); j++) {
 				float tmp = cost_matrix(i, j);
@@ -76,8 +77,11 @@ public:
 				}
 			}
 		}
-		std::cout << "\n----222mmmmm----\n" << cost_matrix << "\n----222vvvvv-----\n" << std::endl;
-		Eigen::Matrix<float, -1, 2> indices = KF::Instance()->LinearAssignmentForCpp(cost_matrix);
+		//std::cout << "\n----222mmmmm----\n" << cost_matrix << "\n----222vvvvv-----\n" << std::endl;
+		//Eigen::Matrix<float, -1, 2> indices = KF::Instance()->LinearAssignmentForCpp(cost_matrix);
+		Eigen::Matrix<float, -1, 2> indices =
+			HungarianOper::Solve(cost_matrix);
+		std::cout << indices << std::endl;
         //xyztodo: indices = linear_assignment(cost_matrix)
         // (-1, 2)
 

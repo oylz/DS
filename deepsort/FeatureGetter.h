@@ -12,10 +12,10 @@
 #include <numpy/arrayobject.h>
 
 
-#include "../../StrCommon.h"
+#include "../StrCommon.h"
 
 
-#include "../deepsort/Detection.h"
+#include "Detection.h"
 
 typedef std::vector<double> DSR;
 typedef std::vector<DSR> DSRS;
@@ -31,23 +31,23 @@ public:
 		int COUNT = PyArray_SHAPE(np_ret)[0];
 		int LEN = PyArray_SHAPE(np_ret)[1];
 		int *c_out = reinterpret_cast<int*>(PyArray_DATA(np_ret));
-		printf("=====begin=================\n");
+		//printf("=====begin=================\n");
 		for (int i = 0; i < COUNT; i++) {
 			IDSR dsr;
 			for (int j = 0; j < LEN; j++) {
 				if (j>0) {
-					printf(",");
+					//printf(",");
 				}
 				int tmp = c_out[i*LEN + j];
 				dsr.push_back(tmp);
-				std::cout << tmp;
+				//std::cout << tmp;
 				if (j == LEN - 1) {
-					printf("\n");
+					//printf("\n");
 				}
 			}
 			re.push_back(dsr);
 		}
-		printf("=====end=================\n");
+		//printf("=====end=================\n");
 		return re;
 	}
 
@@ -62,25 +62,25 @@ public:
 			COUNT = 1;
 		}
 		double *c_out = reinterpret_cast<double*>(PyArray_DATA(np_ret));
-		printf("=====begin=================\n");
-		std::cout.precision(20);
+		//printf("=====begin=================\n");
+		//std::cout.precision(20);
 		for (int i = 0; i < COUNT; i++) {
 			DSR dsr;
 			for (int j = 0; j < LEN; j++) {
 				if (j>0) {
-					printf(",");
+					//printf(",");
 				}
 				double tmp = c_out[i*LEN + j];
 				dsr.push_back(tmp);
 				//printf("%llf", tmp);
-				std::cout << tmp;
+				//std::cout << tmp;
 				if (j == LEN - 1) {
-					printf("\n");
+					//printf("\n");
 				}
 			}
 			re.push_back(dsr);
 		}
-		printf("=====end=================\n");
+		//printf("=====end=================\n");
 		return re;
 	}
 	static void TDSBOX(const DSBOX &xyah, PyObject *args, int pos) {
@@ -421,7 +421,7 @@ private:
 			printf("enc error:%s\n", err.c_str());
 		}
 		uint64_t tmd = gtm();
-		printf("tmd-tmc:%d\n", (int)(tmd - tmc));
+		printf("(incpp)call encode cost time:tmd-tmc:%d\n", (int)(tmd - tmc));
 
 		if (pyResult) {
 			PyArrayObject *np_ret = reinterpret_cast<PyArrayObject*>(pyResult);
@@ -429,10 +429,10 @@ private:
 			int COUNT = PyArray_SHAPE(np_ret)[0];
 			int LEN = PyArray_SHAPE(np_ret)[1];
 			float *c_out = reinterpret_cast<float*>(PyArray_DATA(np_ret));
-			printf("=====begin=================\n");
+			//printf("=====begin=================\n");
 
 			for (int i = 0; i < COUNT; i++) {
-				printf("---b---------------\n");
+				//printf("---b---------------\n");
 				FEATURE ft;
 				for (int j = 0; j < LEN; j++) {
 					/*if (j>0) {
@@ -445,9 +445,9 @@ private:
 					ft(0, j) = c_out[i*LEN + j];
 				}
 				fts.push_back(ft);
-				printf("---e---------------\n");
+				//printf("---e---------------\n");
 			}
-			printf("=====end=================\n");
+			//printf("=====end=================\n");
 		}
 		delete[]buf;
 	}

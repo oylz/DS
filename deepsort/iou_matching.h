@@ -29,8 +29,8 @@ private:
 				area_candidates(i) = candidate[2] * candidate[3];
 			}
 		}
-		std::cout << "ctl-b:\n" << ctl << "ctl-e\n" << std::endl;
-		std::cout << "cbr-b:\n" << cbr << "cbr-e\n" << std::endl;
+		//std::cout << "ctl-b:\n" << ctl << "ctl-e\n" << std::endl;
+		//std::cout << "cbr-b:\n" << cbr << "cbr-e\n" << std::endl;
 		DYNAMICM tl(candidates.rows(), 2);
 		float btl0 = bbox_tl(0, 0);
 		float btl1 = bbox_tl(0, 1);
@@ -40,9 +40,9 @@ private:
 			tl(i, 0) = m;
 			m = max(btl1, ctl(i, 1));
 			tl(i, 1) = m;
-			std::cout << "tl-b:\n" << tl << "tl-e\n" << std::endl;
+			//std::cout << "tl-b:\n" << tl << "tl-e\n" << std::endl;
 		}
-		std::cout << "tl-b:\n" << tl << "tl-e\n" << std::endl;
+		//std::cout << "tl-b:\n" << tl << "tl-e\n" << std::endl;
 		DYNAMICM br(candidates.rows(), 2);
 		float bbr0 = bbox_br(0, 0);
 		float bbr1 = bbox_br(0, 1);
@@ -51,7 +51,7 @@ private:
 			br(i, 0) = min(bbr0, cbr(i, 0));
 			br(i, 1) = min(bbr1, cbr(i, 1));
 		}
-		std::cout << "br-b:\n" << br << "br-e\n" << std::endl;
+		//std::cout << "br-b:\n" << br << "br-e\n" << std::endl;
 		DYNAMICM wh(candidates.rows(), 2);
 		Eigen::VectorXf area_intersection(candidates.rows());
 		for (int i = 0; i < wh.rows(); i++) {
@@ -61,7 +61,7 @@ private:
 			}
 			area_intersection(i) = wh(i, 0)*wh(i, 1);
 		}
-		std::cout << "wh-b:\n" << wh << "wh-e\n" << std::endl;
+		//std::cout << "wh-b:\n" << wh << "wh-e\n" << std::endl;
 		float area_bbox = bbox(0, 2)*bbox(0, 3);
 		
 		Eigen::VectorXf re(candidates.rows());
@@ -112,13 +112,13 @@ public:
 				DSBOX tmp = detections[detection_indices[k]].tlwh_;
 				candidates.row(k) = tmp;
 			}
-			std::cout << "mmm" << candidates << "vvvv" << std::endl;
+			//std::cout << "mmm" << candidates << "vvvv" << std::endl;
 			Eigen::VectorXf tmpm = _iouFun(bbox, candidates);
-			std::cout << "tmpm--b" << tmpm << "tmpm--e" << std::endl;
+			//std::cout << "tmpm--b" << tmpm << "tmpm--e" << std::endl;
 			auto tmp1 = tmpm.array();
 			auto tmp2 = -(tmp1 - 1);
 			cost_matrix.row(row) = tmp2.matrix();
-			std::cout << "nnnnn" << cost_matrix << "uuuu" << std::endl;
+			//std::cout << "nnnnn" << cost_matrix << "uuuu" << std::endl;
 		}
 		return cost_matrix;
     }

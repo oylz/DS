@@ -9,15 +9,11 @@ TEMPLATE = app
 DEFINES += QT_DEPRECATED_WARNINGS
 
 
-SOURCES += ./Tracker/*.cpp \
-	   ./Tracker/HungarianAlg/*.cpp \
-     	   Main.cpp
+SOURCES += Main.cpp
 	
 
-HEADERS  += ./Tracker/*.h \
-	   ./Tracker/HungarianAlg/*.h \
-	   StrCommon.h \
-       ./Tracker/ds/*.h
+HEADERS  += StrCommon.h \
+       ./deepsort/*.h
 
 	INCLUDEPATH += ./
 	
@@ -37,6 +33,7 @@ HEADERS  += ./Tracker/*.h \
 	INCLUDEPATH += D:\svnclientdata\libs\boost_1_55_0
     INCLUDEPATH += "C:\Program Files\Anaconda3\Lib\site-packages\numpy\core\include"
     INCLUDEPATH += "C:\Program Files\Anaconda3\include"
+    INCLUDEPATH += "C:\Program Files\Eigen3\include\eigen3\Eigen"
 	LIBS += -llibglog
 	LIBS += -llibthrift
     

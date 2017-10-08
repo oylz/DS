@@ -1,7 +1,8 @@
-#include "Tracker/defines.h"
+//#include "Tracker/defines.h"
+#include <opencv2/opencv.hpp>
 #include "./deepsort/tracker.h"
 #include "StrCommon.h"
-#include "Tracker/ds/FeatureGetter.h"
+#include "deepsort/FeatureGetter.h"
 #include "deepsort/tracker.h"
 
 NearestNeighborDistanceMetric *NearestNeighborDistanceMetric::self_ = NULL;
@@ -106,6 +107,43 @@ bool _isShow = false;
 int _imgCount = 0;
 std::vector<cv::Rect> _lastRcs;
 
+void ExtractFeature(const cv::Mat &in, 
+	const std::vector<cv::Rect> &rcsin,
+	std::vector<FEATURE> &fts) {
+	int maxw = 0;
+	int maxh = 0;
+	int count = rcsin.size();
+	std::vector<cv::Mat> faces;
+	for (int i = 0; i < count; i++) {
+		cv::Rect rc = rcsin[i];
+		faces.push_back(in(rc).clone());
+		int w = rc.width;
+		int h = rc.height;
+		if (w > maxw) {
+			maxw = w;
+		}
+		if (h > maxh) {
+			maxh = h;
+		}
+	}
+	maxw += 10;
+	maxh += 10;
+
+	cv::Mat frame(maxh, maxw*count, CV_8UC3);
+	std::vector<cv::Rect> rcs;
+	for (int i = 0; i < count; i++) {
+		cv::Mat &face = faces[i];
+		cv::Rect rc = cv::Rect(i*maxw + 5, 5, face.cols, face.rows);
+		rcs.push_back(rc);
+		Mat tmp = frame(rc);
+		face.copyTo(tmp);
+	}
+	if (rcs.size() > 0) {
+		imshow("ff", frame);
+		//waitKey();
+	}
+	FeatureGetter::Instance()->Get(frame, rcs, fts);
+}
 void CB(Mat &frame, int num){
 	if (_vw == NULL) {
 		_vw = new VideoWriter("out.avi", CV_FOURCC('M', 'J', 'P', 'G'), 25.0, Size(frame.cols, frame.rows));
@@ -128,11 +166,12 @@ void CB(Mat &frame, int num){
 		}
 	}
 
-
+	int64_t tm1 = gtm();
 	std::vector<Detection> dets;
 	std::vector<FEATURE> fts;
-	FeatureGetter::Instance()->Get(frame, rcs, fts);
-
+	ExtractFeature(frame, rcs, fts);
+	//FeatureGetter::Instance()->Get(frame, rcs, fts);
+	int64_t tm2 = gtm();
 	for (int i = 0; i < rcs.size(); i++){	
 		DSBOX box;
 		cv::Rect rc = rcs[i];
@@ -147,7 +186,12 @@ void CB(Mat &frame, int num){
 		std::cout << "117\n";
 	}
     _tt->update(dets);
+	int64_t tm3 = gtm();
 	DrawData(frame);
+	int64_t tm4 = gtm();
+	std::cout << "[tm1:" << tm1 << ",tm2:" << tm2 << "("<< (tm2 - tm1) << ")"<< ",tm3:"
+		<< tm3 << "(" << (tm3-tm1) << ")" << ",tm4:" << tm4 << "(" << (tm4-tm1) << ")]"
+		<< std::endl;
 	//(*_vw) << frame;
 	if(_isShow){
 		std::string disp = "frame";
@@ -202,9 +246,9 @@ int main(int argc, char **argv){
 
 	//_imgDir = "e:/code/deep_sort-master/MOT16/ff/fr/img1/";
 	//_rcFile = "e:/code/deep_sort-master/MOT16/ff/fr/det/det.txt";
-	_imgDir = "e:/code/deep_sort-master/MOT16/tt/xyz2/img1/";
-	_rcFile = "e:/code/deep_sort-master/MOT16/tt/xyz2/det/det.txt";
-	_imgCount = 750;// 2001;// 750;// 680;
+	_imgDir = "e:/code/deep_sort-master/MOT16/tt/xyz/img1/";
+	_rcFile = "e:/code/deep_sort-master/MOT16/tt/xyz/det/det.txt";
+	_imgCount = 2001;// 2001;// 750;// 680;
 	Go();
 	return 0;
 }
