@@ -21,7 +21,7 @@ typedef std::vector<double> DSR;
 typedef std::vector<DSR> DSRS;
 typedef std::vector<int> IDSR;
 typedef std::vector<IDSR> IDSRS;
-
+static const std::string PYROOT = "E:/code/NewFaceTracker/py/";
 class Tpy {
 public:
 	static IDSRS PPI(PyObject *pyResult) {
@@ -323,7 +323,11 @@ public:
 		}
 
 		PyRun_SimpleString("import sys \nsys.argv = ['']");
-		PyRun_SimpleString("sys.path.append('E:/wk20170824/DeepSort/')");
+		std::string ss = "sys.path.append('";
+		ss += PYROOT;
+		ss += "')";
+		//PyRun_SimpleString("sys.path.append('E:/code/NewFaceTracker/py/')");
+		PyRun_SimpleString(ss.c_str());
 
 		PyObject *pyModule = PyImport_ImportModule("generate_detections");
 		if (!pyModule) {
@@ -455,8 +459,10 @@ private:
 		PyObject *preEnc = PyObject_GetAttrString(gdi, "preEncode");
 		PyObject *args = PyTuple_New(2);
 		PyTuple_SetItem(args, 0, Py_BuildValue("O", gd_));
+		std::string ss = PYROOT;
+		ss += "networks/mars-small128.ckpt-68577";
 		PyTuple_SetItem(args, 1, Py_BuildValue("s",
-			"E:/code/deep_sort-master/resources/networks/mars-small128.ckpt-68577"));
+			ss.c_str()));
 		PyObject *pyResult = PyObject_CallObject(preEnc, args);
 		return (pyResult != NULL);
 	}
