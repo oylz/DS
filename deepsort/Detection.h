@@ -12,6 +12,8 @@ typedef Eigen::Matrix<float, 1, 2, Eigen::RowMajor> PT2;
 typedef Eigen::Matrix<float, -1, -1, Eigen::RowMajor> DYNAMICM;
 typedef Eigen::Matrix<float, 1, 8, Eigen::RowMajor> MEAN;
 typedef Eigen::Matrix<float, 8, 8, Eigen::RowMajor> VAR;
+typedef Eigen::Matrix<float, 1, 4, Eigen::RowMajor> NMEAN;
+typedef Eigen::Matrix<float, 4, 4, Eigen::RowMajor> NVAR;
 
 struct Detection {
 	DSBOX tlwh_;
@@ -20,6 +22,7 @@ struct Detection {
 	Detection(const DSBOX &tlwh, float confidence, const FEATURE &feature) {
 		tlwh_ = tlwh;
 		confidence_ = confidence;
+		//std::cout << feature;
 		feature_ = feature;
 	}
 	DSBOX to_tlbr() const{

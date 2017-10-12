@@ -2,7 +2,8 @@
 import numpy as np
 import cv2
 
-import gen.enc as enc
+#import gen.enc as enc
+import enc as enc
 from io import StringIO
 
 class Gd(object):
@@ -89,6 +90,7 @@ class Gd(object):
                     0., 255., self.image_shape).astype(np.uint8)
             image_patches.append(patch)
         image_patches = np.asarray(image_patches)
+        #print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         return self.enc.encode(image_patches)
     
     def encodeForCpp(self, img, cols, rows, boxesStr):
@@ -97,11 +99,15 @@ class Gd(object):
         #cv2.imshow("img_data", img_data)
         #cv2.waitKey()
         #print("mmmmmmm1")
-        boxes = np.loadtxt(StringIO(boxesStr))
-        #print(boxes.shape)
+        #print(boxesStr)
+        #a = StringIO(unicode(boxesStr))
+        #print(a)
+        #print("mmmmmmm1.1")
+        boxes = np.loadtxt(StringIO(unicode(boxesStr)))
+        print(boxes.shape)
         if(boxes.shape == (4,)):
             boxes = boxes[np.newaxis, :]
-        #print(boxes.shape)    
+        print(boxes.shape)    
         #print("mmmmmmm2")
         return self.encode(img_data, boxes)
         #tmp = self.encode(img_data, boxes)

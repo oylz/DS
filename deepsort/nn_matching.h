@@ -30,6 +30,7 @@ Eigen::VectorXf _nn_cosine_distance(const FEATURESS &x,
 	auto tmp2 = -(tmp1 - 1);
 	DYNAMICM distances = tmp2.matrix();
 	Eigen::VectorXf re(distances.cols());
+#ifdef WIN32
 	auto rea = re.array();
 	for (int col = 0; col < distances.cols(); col++) {
 		auto cc = distances.col(col);
@@ -37,6 +38,13 @@ Eigen::VectorXf _nn_cosine_distance(const FEATURESS &x,
 		rea.row(col) = min;
 	}
 	re = rea.matrix();
+#else
+	for (int col = 0; col < distances.cols(); col++) {
+		auto cc = distances.col(col);
+		float min = cc.minCoeff();
+		re(col) = min;
+	}
+#endif
 	//std::cout << "re---b\n" << re << "\nre----e\n" << std::endl;
 	return re;
 }

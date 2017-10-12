@@ -6,7 +6,11 @@
 #include <python.h>
 #define _DEBUG
 #else
-#include <python.h>
+	#ifdef WIN32
+	#include <python.h>
+	#else
+	#include <Python.h>
+	#endif
 #endif
 #include <opencv2/opencv.hpp>
 #include <numpy/arrayobject.h>
@@ -17,11 +21,12 @@
 
 #include "Detection.h"
 
+
 typedef std::vector<double> DSR;
 typedef std::vector<DSR> DSRS;
 typedef std::vector<int> IDSR;
 typedef std::vector<IDSR> IDSRS;
-static const std::string PYROOT = "E:/code/NewFaceTracker/py/";
+static const std::string PYROOT = "/home/xyz/code1/DS/py/";
 class Tpy {
 public:
 	static IDSRS PPI(PyObject *pyResult) {
@@ -185,6 +190,8 @@ public:
 		return re;
 	}
 };
+
+#ifdef PYKF
 class KF {
 private:
 	static KF *self_;
@@ -290,9 +297,9 @@ public:
 		return re;
 	}
 	bool Init() {
-		PyObject *pyModule = PyImport_ImportModule("deep_sort.kalman_filter");
+		PyObject *pyModule = PyImport_ImportModule("kalman_filter");
 		if (!pyModule) {
-			printf("Can not open python module\n");
+			printf("Can not open python module kalman_filter\n");
 			return false;
 		}
 		PyObject *kfi = PyObject_GetAttrString(pyModule, "KalmanFilter");
@@ -304,8 +311,13 @@ public:
 		predict_ = PyObject_GetAttrString(kfi, "predict");
 		update_ = PyObject_GetAttrString(kfi, "update");
 		linearAssignment_ = PyObject_GetAttrString(kfi, "LinearAssignmentForCpp");
+		return true;
 	}
 };
+#endif
+
+
+
 class FeatureGetter {
 private:
 	static FeatureGetter *self_;
@@ -331,15 +343,24 @@ public:
 
 		PyObject *pyModule = PyImport_ImportModule("generate_detections");
 		if (!pyModule) {
-			printf("Can not open python module\n");
+			printf("Can not open python module generate_detections\n");
 			return false;
 		}
 		PyObject *gdi = PyObject_GetAttrString(pyModule, "Gd");
+		if(gdi == NULL){
+			printf("gdi is null\n");
+			return false;
+		}
 		gd_ = PyObject_CallObject(gdi, NULL);
+		if(gd_ == NULL){
+			printf("gd is null");
+			return false;
+		}
 
 		PreEnc(gdi);
 		enc_ = PyObject_GetAttrString(gdi, "encodeForCpp");
 		ii();
+		return true;
 	}
 	void Get(const cv::Mat &img, const std::vector<cv::Rect> &rcs,
 		std::vector<FEATURE> &fts) {
@@ -360,7 +381,14 @@ private:
 			return 0;
 		}
 		//必须添加如下函数，否则无法执行PyArray_SimpleNewFromData
+#ifdef WIN32
 		import_array();
+#else
+		if (_import_array() < 0) {
+			PyErr_Print(); 
+			PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
+		}
+#endif
 		_init = true;
 	}
 	void Enc(const cv::Mat &img, const std::vector<cv::Rect> &rcs,
@@ -423,6 +451,10 @@ private:
 		catch (std::exception &e) {
 			std::string err(e.what());
 			printf("enc error:%s\n", err.c_str());
+		}
+		if(pyResult == NULL){
+			printf("call enc return null, exit\n");
+			exit(0);
 		}
 		uint64_t tmd = gtm();
 		printf("(incpp)call encode cost time:tmd-tmc:%d\n", (int)(tmd - tmc));

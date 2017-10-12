@@ -9,17 +9,25 @@ TEMPLATE = app
 DEFINES += QT_DEPRECATED_WARNINGS
 
 
-SOURCES += Main.cpp
+SOURCES += Main.cpp \
+	./munkres/*.cpp \
+	./munkres/adapters/*.cpp
 	
 
 HEADERS  += StrCommon.h \
-       ./deepsort/*.h
+       ./deepsort/*.h \
+	./munkres/*.h \
+	./munkres/adapters/*.h
+
+
 
 	INCLUDEPATH += ./
 	
     unix{
     INCLUDEPATH += /usr/local/include/opencv
     INCLUDEPATH += /usr/local/include
+    INCLUDEPATH += /home/xyz/anaconda2/include
+    INCLUDEPATH += /home/xyz/anaconda2/lib/python2.7/site-packages/numpy/core/include 
     LIBS += -L/usr/local/lib
     LIBS += -lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lopencv_highgui -lopencv_video -lopencv_videoio
 	LIBS += -lglog -lboost_system -lopencv_tracking

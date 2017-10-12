@@ -139,11 +139,46 @@ void ExtractFeature(const cv::Mat &in,
 		face.copyTo(tmp);
 	}
 	if (rcs.size() > 0) {
-		imshow("ff", frame);
+		//imshow("ff", frame);
 		//waitKey();
 	}
 	FeatureGetter::Instance()->Get(frame, rcs, fts);
 }
+#if 0
+struct LastRcs{
+	void Update(const std::vector<cv::Rect> &rcs){
+		rcs_.clear();
+		std::copy(rcs.begin(), rcs.end(), std::back_inserter(rcs_));
+	}
+	bool IsSame(const std::vector<cv::Rect> &rcs){
+		if(rcs.size() != rcs_.size()){
+			return false;
+		}
+		bool re = true;
+		for(int i = 0; i < rcs.size(); i++){
+			cv::Rect rc = rcs[i];
+			bool tmp = IsIn(rc);	
+			if(!tmp){
+				re = false;
+				break;	
+			}
+		}
+		return re;
+	}
+private:
+	bool IsIn(const cv::Rect &rc){
+		for(int i = 0; i < rcs_.size(); i++){
+			cv::Rect tmp = rcs_[i];
+			if(rc == tmp){
+				return true;
+			}
+		}
+		return false;
+	}
+	std::vector<cv::Rect> rcs_;
+};
+LastRcs _last;
+#endif
 void CB(Mat &frame, int num){
 	if (_vw == NULL) {
 		_vw = new VideoWriter("out.avi", CV_FOURCC('M', 'J', 'P', 'G'), 25.0, Size(frame.cols, frame.rows));
@@ -167,31 +202,49 @@ void CB(Mat &frame, int num){
 	}
 
 	int64_t tm1 = gtm();
-	std::vector<Detection> dets;
-	std::vector<FEATURE> fts;
-	ExtractFeature(frame, rcs, fts);
-	//FeatureGetter::Instance()->Get(frame, rcs, fts);
-	int64_t tm2 = gtm();
-	for (int i = 0; i < rcs.size(); i++){	
-		DSBOX box;
-		cv::Rect rc = rcs[i];
-		box(0) = rc.x;
-		box(1) = rc.y;
-		box(2) = rc.width;
-		box(3) = rc.height;
-		Detection det(box, 1, fts[i]);
-		dets.push_back(det);
+#if 0
+	if(!_last.IsSame(rcs)){
+#endif
+		std::vector<Detection> dets;
+		std::vector<FEATURE> fts;
+		if(rcs.size() > 0){
+			ExtractFeature(frame, rcs, fts);
+		}
+		//FeatureGetter::Instance()->Get(frame, rcs, fts);
+		int64_t tm2 = gtm();
+		for (int i = 0; i < rcs.size(); i++){	
+			DSBOX box;
+			cv::Rect rc = rcs[i];
+			box(0) = rc.x;
+			box(1) = rc.y;
+			box(2) = rc.width;
+			box(3) = rc.height;
+			Detection det(box, 1, fts[i]);
+			dets.push_back(det);
+		}
+		if (num == 117) {
+			std::cout << "117\n";
+		}
+   	 	_tt->update(dets);
+		int64_t tm3 = gtm();
+		DrawData(frame);
+		int64_t tm4 = gtm();
+		std::cout << "[tm1:" << tm1 << ",tm2:" << tm2 << "("<< (tm2 - tm1) << ")"<< ",tm3:"
+			<< tm3 << "(" << (tm3-tm1) << ")" << ",tm4:" << tm4 << "(" << (tm4-tm1) << ")]"
+			<< std::endl;
+#if 0
 	}
-	if (num == 117) {
-		std::cout << "117\n";
+	else{
+		int64_t tm3 = gtm();
+		DrawData(frame);
+		int64_t tm4 = gtm();
+		std::cout << "[tm1:" << tm1 << ",tm3:"
+			<< tm3 << "(" << (tm3-tm1) << ")]"
+			<< std::endl;
+
 	}
-    _tt->update(dets);
-	int64_t tm3 = gtm();
-	DrawData(frame);
-	int64_t tm4 = gtm();
-	std::cout << "[tm1:" << tm1 << ",tm2:" << tm2 << "("<< (tm2 - tm1) << ")"<< ",tm3:"
-		<< tm3 << "(" << (tm3-tm1) << ")" << ",tm4:" << tm4 << "(" << (tm4-tm1) << ")]"
-		<< std::endl;
+	_last.Update(rcs);
+#endif
 	//(*_vw) << frame;
 	if(_isShow){
 		std::string disp = "frame";
@@ -239,16 +292,18 @@ int main(int argc, char **argv){
 		return 0;
 	}
 	_isShow = toInt(argv[1]);
-	FeatureGetter::Instance()->Init();
+	if(!FeatureGetter::Instance()->Init()){
+		return 0;
+	}
 	KF::Instance()->Init();
 	_tt = new TTracker();
 	NearestNeighborDistanceMetric::Instance()->Init(0.2, 100);
 
 	//_imgDir = "e:/code/deep_sort-master/MOT16/ff/fr/img1/";
 	//_rcFile = "e:/code/deep_sort-master/MOT16/ff/fr/det/det.txt";
-	_imgDir = "e:/code/deep_sort-master/MOT16/tt/xyz/img1/";
-	_rcFile = "e:/code/deep_sort-master/MOT16/tt/xyz/det/det.txt";
-	_imgCount = 2001;// 2001;// 750;// 680;
+	_imgDir = "/home/xyz/code1/xyz/img1/";
+	_rcFile = "/home/xyz/code1/xyz/det/det.txt";
+	_imgCount = 680;// 2001;// 750;// 680;
 	Go();
 	return 0;
 }
