@@ -81,7 +81,7 @@ public:
 		//Eigen::Matrix<float, -1, 2> indices = KF::Instance()->LinearAssignmentForCpp(cost_matrix);
 		Eigen::Matrix<float, -1, 2> indices =
 			HungarianOper::Solve(cost_matrix);
-		std::cout << "indices:\n" << indices << std::endl;
+		//std::cout << "indices:\n" << indices << std::endl;
         //xyztodo: indices = linear_assignment(cost_matrix)
         // (-1, 2)
 

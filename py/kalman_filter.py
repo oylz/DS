@@ -88,12 +88,12 @@ class KalmanFilter(object):
             1e-5,
             10 * self._std_weight_velocity_ * measurement[3]]
         covariance = np.diag(np.square(std))
-        print("[-4--]begin mean:")
+        """print("[-4--]begin mean:")
         print(mean)
         print("[-4--]end mean")
         print("[-4--]begin covariance:")
         print(covariance)
-        print("[-4--]end covariance")
+        print("[-4--]end covariance")"""
         return mean, covariance
 
     def predict(self, meani, covariancei):
@@ -129,13 +129,13 @@ class KalmanFilter(object):
             1e-5,
             self._std_weight_velocity_ * mean[3]]
         
-        print("[-3--]begin square")
+        """print("[-3--]begin square")
         print(np.square(np.r_[std_pos, std_vel]))
-        print("[-3--]end square")
+        print("[-3--]end square")"""
         motion_cov = np.diag(np.square(np.r_[std_pos, std_vel]))
 
         mean = np.dot(self._motion_mat_, mean)
-        print("[-3--]begin self._motion_mat_")
+        """print("[-3--]begin self._motion_mat_")
         print(self._motion_mat_)
         print("[-3--]end self._motion_mat_")
         print("[-3--]begin covariance")
@@ -144,13 +144,13 @@ class KalmanFilter(object):
     
         print("[-3--]begin motion_cov:") 
         print(motion_cov)
-        print("[-3--]end motion_cov:") 
+        print("[-3--]end motion_cov:") """
 
         covariance = np.linalg.multi_dot((
             self._motion_mat_, covariance, self._motion_mat_.T)) + motion_cov
-        print("[-3--]begin covariance result")
+        """print("[-3--]begin covariance result")
         print(covariance)
-        print("[-3--]end covariance result")
+        print("[-3--]end covariance result")"""
         
         return mean, covariance
 
@@ -192,7 +192,7 @@ class KalmanFilter(object):
         kalman_gain = scipy.linalg.cho_solve(
             (chol_factor, lower), np.dot(covariance, self._update_mat_.T).T,
             check_finite=False).T
-        print("[-1--]bbegin ddd")
+        """print("[-1--]bbegin ddd")
         print(ddd)
         print("[-1--]bend ddd")
         print("[-1--]bbegin kalman_gain")
@@ -203,14 +203,14 @@ class KalmanFilter(object):
         print("[-1--]end measurement")
         print("[-1--]begin projected_mean")
         print(projected_mean)
-        print("[-1--]end projectd_mean")
+        print("[-1--]end projectd_mean")"""
         innovation = measurement - projected_mean
-        print("[-1--]begin innovation")
+        """print("[-1--]begin innovation")
         print(innovation)
         print("[-1--]end innovation")
         print("[-1--]begin projected_cov")
         print(projected_cov)
-        print("[-1--]end projectd_cov")
+        print("[-1--]end projectd_cov")"""
 
         new_mean = mean + np.dot(innovation, kalman_gain.T)
         new_covariance = covariance - np.linalg.multi_dot((
@@ -250,7 +250,7 @@ class KalmanFilter(object):
         mean = np.reshape(meani, (8,)).astype(np.float)
         covariance = np.reshape(covariancei, (8, 8)).astype(np.float)
         measurements = np.reshape(measurementsi, (-1, 4)).astype(np.float)
-        print("[-2--]begin mean")
+        """print("[-2--]begin mean")
         print(mean)
         print("[-2--]end mean")
         print("[-2--]begin covariance")
@@ -258,44 +258,44 @@ class KalmanFilter(object):
         print("[-2--]end covariance")
         print("[-2--]begin measurements")
         print(measurements)
-        print("[-2--]end measurements")
+        print("[-2--]end measurements")"""
       
         mean, covariance = self._project(mean, covariance)
         if only_position:
             mean, covariance = mean[:2], covariance[:2, :2]
             measurements = measurements[:, :2]
-        print("[-2--]begin mean1")
+        """print("[-2--]begin mean1")
         print(mean)
         print("[-2--]end mean1")
         print("[-2--]begin covariance1")
         print(covariance)
-        print("[-2--]end covariance1")
+        print("[-2--]end covariance1")"""
 
         cholesky_factor = np.linalg.cholesky(covariance)
         """print("[-2--]begin covariance:")
         print(covariance)
         print("[-2--]bend covariance:")"""
-        print("[-2--]bbegin cholesky_factor")
+        """print("[-2--]bbegin cholesky_factor")
         print(cholesky_factor)
-        print("[-2--]bend cholesky_factor")
+        print("[-2--]bend cholesky_factor")"""
         """print("[-2--]measurements:\n")
         print(measurements)
         print("[-2--]mean:\n")
         print(mean)"""
         d = measurements - mean
-        print("[-2--]bbegin d")
+        """print("[-2--]bbegin d")
         print d
-        print("[-2--]bend d")
+        print("[-2--]bend d")"""
         z = scipy.linalg.solve_triangular(
             cholesky_factor, d.T, lower=True, check_finite=False,
             overwrite_b=True)
-        print("[-2--]begin z")
+        """print("[-2--]begin z")
         print(z)
-        print("[-2--]end z")
+        print("[-2--]end z")"""
         squared_maha = np.sum(z * z, axis=0)
-        print("[-2--]begin squared_maha")
+        """print("[-2--]begin squared_maha")
         print(squared_maha)
-        print("[-2--]end squared_maha")
+        print("[-2--]end squared_maha")"""
         return squared_maha
     
     def _project(self, mean, covariance):
@@ -320,31 +320,31 @@ class KalmanFilter(object):
             self._std_weight_position_ * mean[3],
             1e-1,
             self._std_weight_position_ * mean[3]]
-        print("[-0--]begin mtmp")
+        """print("[-0--]begin mtmp")
         print(np.square(std))
-        print("[-0--]end mtmp")
+        print("[-0--]end mtmp")"""
 
 
         innovation_cov = np.diag(np.square(std))
-        print("[-0--]begin innovation_cov")
+        """print("[-0--]begin innovation_cov")
         print(innovation_cov)
-        print("[-0--]end innovation_cov")
+        print("[-0--]end innovation_cov")"""
 
         mean = np.dot(self._update_mat_, mean)
-        print("[-0--]begin var")
+        """print("[-0--]begin var")
         print(covariance)
         print("[-0--]end var")
 
         print("[-0--]begin _update_mat_")
         print(self._update_mat_)
-        print("[-0--]end _update_mat_")
+        print("[-0--]end _update_mat_")"""
 
 
         covariance = np.linalg.multi_dot((
             self._update_mat_, covariance, self._update_mat_.T))
-        print("[-0--]begin var1")
+        """print("[-0--]begin var1")
         print(covariance)
-        print("[-0--]end var1")
+        print("[-0--]end var1")"""
 
 
         return mean, covariance + innovation_cov

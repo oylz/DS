@@ -63,7 +63,7 @@ class Gd(object):
     
     def preEncode(self, model_filename):
         print("hahahah2")
-        self.enc.preEncode(self.image_shape, 32, model_filename, "cosine")
+        self.enc.preEncode(self.image_shape, 128, model_filename, "cosine")
         print("hahahah")
         return 1
         #def encoder(image, box):
@@ -104,10 +104,10 @@ class Gd(object):
         #print(a)
         #print("mmmmmmm1.1")
         boxes = np.loadtxt(StringIO(unicode(boxesStr)))
-        print(boxes.shape)
+        #print(boxes.shape)
         if(boxes.shape == (4,)):
             boxes = boxes[np.newaxis, :]
-        print(boxes.shape)    
+        #print(boxes.shape)    
         #print("mmmmmmm2")
         return self.encode(img_data, boxes)
         #tmp = self.encode(img_data, boxes)

@@ -105,14 +105,14 @@ std::string _imgDir;
 VideoWriter *_vw = NULL;
 bool _isShow = false;
 int _imgCount = 0;
-std::vector<cv::Rect> _lastRcs;
 
+#if 0
 void ExtractFeature(const cv::Mat &in, 
 	const std::vector<cv::Rect> &rcsin,
 	std::vector<FEATURE> &fts) {
 	int maxw = 0;
 	int maxh = 0;
-	int count = rcsin.size();
+	int count = rcsin.size(); 
 	std::vector<cv::Mat> faces;
 	for (int i = 0; i < count; i++) {
 		cv::Rect rc = rcsin[i];
@@ -144,46 +144,62 @@ void ExtractFeature(const cv::Mat &in,
 	}
 	FeatureGetter::Instance()->Get(frame, rcs, fts);
 }
-#if 0
-struct LastRcs{
-	void Update(const std::vector<cv::Rect> &rcs){
-		rcs_.clear();
-		std::copy(rcs.begin(), rcs.end(), std::back_inserter(rcs_));
-	}
-	bool IsSame(const std::vector<cv::Rect> &rcs){
-		if(rcs.size() != rcs_.size()){
-			return false;
+#else
+void ExtractFeature(const cv::Mat &in, 
+	const std::vector<cv::Rect> &rcsin,
+	std::vector<FEATURE> &fts) {
+	int maxw = 0;
+	int maxh = 0;
+	int count = rcsin.size(); 
+#ifdef UBC
+	int BC = 8;
+	if(count < BC)count=BC;
+#endif
+	std::vector<cv::Mat> faces;
+	cv::Rect lr;
+	for (int i = 0; i < count; i++) {
+		cv::Rect rc;
+		if(i < rcsin.size()){
+			rc = rcsin[i];
+			lr = rc;
 		}
-		bool re = true;
-		for(int i = 0; i < rcs.size(); i++){
-			cv::Rect rc = rcs[i];
-			bool tmp = IsIn(rc);	
-			if(!tmp){
-				re = false;
-				break;	
-			}
+		else{
+			rc = lr;
 		}
-		return re;
-	}
-private:
-	bool IsIn(const cv::Rect &rc){
-		for(int i = 0; i < rcs_.size(); i++){
-			cv::Rect tmp = rcs_[i];
-			if(rc == tmp){
-				return true;
-			}
+		faces.push_back(in(rc).clone());
+		int w = rc.width;
+		int h = rc.height;
+		if (w > maxw) {
+			maxw = w;
 		}
-		return false;
+		if (h > maxh) {
+			maxh = h;
+		}
 	}
-	std::vector<cv::Rect> rcs_;
-};
-LastRcs _last;
+	maxw += 10;
+	maxh += 10;
+
+	cv::Mat frame(maxh, maxw*count, CV_8UC3);
+	std::vector<cv::Rect> rcs;
+	for (int i = 0; i < count; i++) {
+		cv::Mat &face = faces[i];
+		cv::Rect rc = cv::Rect(i*maxw + 5, 5, face.cols, face.rows);
+		rcs.push_back(rc);
+		Mat tmp = frame(rc);
+		face.copyTo(tmp);
+	}
+	std::vector<FEATURE> newfts;
+	FeatureGetter::Instance()->Get(frame, rcs, newfts);
+	for(int i = 0; i < rcsin.size(); i++){
+		fts.push_back(newfts[i]);
+	}
+}
 #endif
 void CB(Mat &frame, int num){
 	if (_vw == NULL) {
 		_vw = new VideoWriter("out.avi", CV_FOURCC('M', 'J', 'P', 'G'), 25.0, Size(frame.cols, frame.rows));
 	}
-
+	int64_t tm0 = gtm();
 	if (_rcMap.empty()) {
 		ReadRcFileTotal(_rcFile);
 	}
@@ -202,15 +218,15 @@ void CB(Mat &frame, int num){
 	}
 
 	int64_t tm1 = gtm();
-#if 0
-	if(!_last.IsSame(rcs)){
-#endif
 		std::vector<Detection> dets;
 		std::vector<FEATURE> fts;
+#if 1
 		if(rcs.size() > 0){
 			ExtractFeature(frame, rcs, fts);
 		}
-		//FeatureGetter::Instance()->Get(frame, rcs, fts);
+#else
+		FeatureGetter::Instance()->Get(frame, rcs, fts);
+#endif
 		int64_t tm2 = gtm();
 		for (int i = 0; i < rcs.size(); i++){	
 			DSBOX box;
@@ -229,22 +245,13 @@ void CB(Mat &frame, int num){
 		int64_t tm3 = gtm();
 		DrawData(frame);
 		int64_t tm4 = gtm();
-		std::cout << "[tm1:" << tm1 << ",tm2:" << tm2 << "("<< (tm2 - tm1) << ")"<< ",tm3:"
-			<< tm3 << "(" << (tm3-tm1) << ")" << ",tm4:" << tm4 << "(" << (tm4-tm1) << ")]"
-			<< std::endl;
-#if 0
-	}
-	else{
-		int64_t tm3 = gtm();
-		DrawData(frame);
-		int64_t tm4 = gtm();
-		std::cout << "[tm1:" << tm1 << ",tm3:"
-			<< tm3 << "(" << (tm3-tm1) << ")]"
-			<< std::endl;
-
-	}
-	_last.Update(rcs);
-#endif
+		std::string tail = "";
+		if(tm4-tm1 > 30000){
+			tail = "****";
+		}
+		std::cout << num << "----rcs.size():" << rcs.size() << "[tm0:" << tm0 << ",tm1:" << tm1 << ",tm2:" << tm2 << "("<< (tm2 - tm1) << ")"<< ",tm3:"
+			<< tm3 << "(" << (tm3-tm1) << ")" << ",tm4:" << tm4 << "(" << (tm4-tm1) << ")]" << tail.c_str() << "[tm4-tm0]:" << (tm4-tm0) << 
+			std::endl;
 	//(*_vw) << frame;
 	if(_isShow){
 		std::string disp = "frame";
@@ -294,6 +301,30 @@ int main(int argc, char **argv){
 	_isShow = toInt(argv[1]);
 	if(!FeatureGetter::Instance()->Init()){
 		return 0;
+	}
+	// for speed, now init 100boxes to init run extracefeature
+	if(1){
+		Mat frame = cv::imread("../xyz/img1/000001.jpg");
+		std::vector<Detection> dets;
+		std::vector<FEATURE> fts;
+		std::vector<cv::Rect> rcs;
+		srand((unsigned)time(NULL));
+		int width = frame.cols;
+		int height = frame.rows;
+					int x = rand()%width;
+					int y = rand()%height;
+					int w = 100;
+					int h = 100;
+					//std::cout << x << "," << y  << "," << w  << "," << h << "\n";
+					if(x+w > width){
+						w = width - x;
+					}
+					if(y+h > height){
+						h = height - y;
+					}
+					cv::Rect rc(x, y, w, h);	
+					rcs.push_back(rc);
+		ExtractFeature(frame, rcs, fts);
 	}
 	KF::Instance()->Init();
 	_tt = new TTracker();

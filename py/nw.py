@@ -8,10 +8,12 @@ import rb as rb
 class Nw(object):
     #========begin====network==========================
     def batch_norm_fn(self,x):
+	print("batch_norm_fn")
         return slim.batch_norm(x, scope=tf.get_variable_scope().name + "/bn")
             
     def _create_network(self, incoming, num_classes, reuse=None, l2_normalize=True,
                        create_summaries=True, weight_decay=1e-8):
+        print("_create_network")
         nonlinearity = tf.nn.elu
         conv_weight_init = tf.truncated_normal_initializer(stddev=1e-3)
         conv_bias_init = tf.zeros_initializer()

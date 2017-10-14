@@ -13,7 +13,7 @@ LLIBS="-lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lopencv_highgui -lopen
 
 rm DS -rf
 #g++ --std=c++14 -ggdb -DPYKF -o DS $IINCLUDE $LLIBPATH $LLIBS Main.cpp deepsort/munkres/munkres.cpp deepsort/munkres/adapters/adapter.cpp deepsort/munkres/adapters/boostmatrixadapter.cpp
-g++ --std=c++14 -ggdb -DKLOG -o DS $IINCLUDE $LLIBPATH $LLIBS Main.cpp deepsort/munkres/munkres.cpp deepsort/munkres/adapters/adapter.cpp deepsort/munkres/adapters/boostmatrixadapter.cpp
+g++ --std=c++14 -Ofast -o DS $IINCLUDE $LLIBPATH $LLIBS Main.cpp deepsort/munkres/munkres.cpp deepsort/munkres/adapters/adapter.cpp deepsort/munkres/adapters/boostmatrixadapter.cpp
 
 
 
