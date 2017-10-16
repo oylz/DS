@@ -1,10 +1,7 @@
-#ifndef _FEATUREGETTERH_
-#define _FEATUREGETTERH_
 
-#include "../StrCommon.h"
+#include "FeatureGetter.h"
 
 
-#include "Detection.h"
 #include <tensorflow/core/public/session.h>
 #include <fstream>
 #include <iostream>
@@ -20,8 +17,11 @@
 namespace tf = tensorflow;
 
 
+FeatureGetter *FeatureGetter::self_ = NULL;
 
 typedef unsigned char uint8;
+
+std::unique_ptr<tf::Session> session;
 
 void tobuffer(const std::vector<cv::Mat> &imgs, uint8 *buf) {
 	int pos = 0;
@@ -55,18 +55,7 @@ typedef std::vector<int> IDSR;
 typedef std::vector<IDSR> IDSRS;
 
 
-class FeatureGetter {
-private:
-	static FeatureGetter *self_;
-    std::unique_ptr<tf::Session> session;
-public:
-	static FeatureGetter *Instance() {
-		if (self_ == NULL) {
-			self_ = new FeatureGetter();
-		}
-		return self_;
-	}
-	bool Init() {
+	bool FeatureGetter::Init() {
         tf::Session* session_ptr;
         auto status = NewSession(tf::SessionOptions(), &session_ptr);
         if (!status.ok()) {
@@ -98,8 +87,8 @@ public:
         
 		return true;
 	}
-	bool Get(const cv::Mat &img, const std::vector<cv::Rect> &rcs,
-		std::vector<FEATURE> &fts) {
+	bool FeatureGetter::Get(const cv::Mat &img, const std::vector<cv::Rect> &rcs,
+		std::vector<FFEATURE> &fts) {
         std::vector<cv::Mat> mats;
         for(cv::Rect rc:rcs){
             cv::Mat mat1 = img(rc).clone();
@@ -135,7 +124,7 @@ public:
         int len = output_tensors[0].flat<float>().size() / count;
         for (int i = 0; i < count; i++) {
             printf("begin====\n");
-			FEATURE ft;
+			FFEATURE ft;
             for (int j = 0; j < len; j++) {
 				ft(j) = tensor_buffer[i*len + j];
                 printf(",%f", tensor_buffer[i*len+j]);
@@ -146,10 +135,5 @@ public:
 		return true;
 	}
 
-public:
-	~FeatureGetter() {
-	}
 
-};
 
-#endif

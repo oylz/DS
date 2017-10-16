@@ -5,7 +5,7 @@
 #include <Eigen>
 
 #include "KalmanTracker.h"
-#include "FeatureGetter.h"
+#include "FeatureGetter/FeatureGetter.h"
 #include "HungarianOper.h"
 
 const static int INFTY_COST = 1e+5;

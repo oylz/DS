@@ -1,12 +1,10 @@
-//#include "Tracker/defines.h"
+#include "deepsort/FeatureGetter/FeatureGetter.h"
 #include <opencv2/opencv.hpp>
 #include "./deepsort/tracker.h"
 #include "StrCommon.h"
-#include "deepsort/FeatureGetter.h"
 #include "deepsort/tracker.h"
 
 NearestNeighborDistanceMetric *NearestNeighborDistanceMetric::self_ = NULL;
-FeatureGetter *FeatureGetter::self_ = NULL;
 KF *KF::self_ = NULL;
 
 

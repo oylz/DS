@@ -1,6 +1,6 @@
 #ifndef _KALMANTRACKERH_
 #define _KALMANTRACKERH_
-#include "FeatureGetter.h"
+#include "FeatureGetter/FeatureGetter.h"
 #include "kalman_filter.h"
 
 enum TrackState{
