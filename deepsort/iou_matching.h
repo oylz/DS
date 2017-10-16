@@ -36,9 +36,9 @@ private:
 		float btl1 = bbox_tl(0, 1);
 		for (int i = 0; i < tl.rows(); i++) {
 			//DYNAMICM row = tl.row(i);
-			float m = max(btl0, ctl(i, 0));
+			float m = cv::max(btl0, ctl(i, 0));
 			tl(i, 0) = m;
-			m = max(btl1, ctl(i, 1));
+			m = cv::max(btl1, ctl(i, 1));
 			tl(i, 1) = m;
 			//std::cout << "tl-b:\n" << tl << "tl-e\n" << std::endl;
 		}
@@ -48,8 +48,8 @@ private:
 		float bbr1 = bbox_br(0, 1);
 		for (int i = 0; i < br.rows(); i++) {
 			//DYNAMICM row = br.row(i);
-			br(i, 0) = min(bbr0, cbr(i, 0));
-			br(i, 1) = min(bbr1, cbr(i, 1));
+			br(i, 0) = cv::min(bbr0, cbr(i, 0));
+			br(i, 1) = cv::min(bbr1, cbr(i, 1));
 		}
 		//std::cout << "br-b:\n" << br << "br-e\n" << std::endl;
 		DYNAMICM wh(candidates.rows(), 2);

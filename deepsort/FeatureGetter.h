@@ -1,6 +1,10 @@
 #ifndef _FEATUREGETTERH_
 #define _FEATUREGETTERH_
 
+#ifndef PYKF
+#include "feature_getter.h"
+#else
+
 #ifdef _DEBUG
 #undef _DEBUG
 #include <python.h>
@@ -26,7 +30,7 @@ typedef std::vector<double> DSR;
 typedef std::vector<DSR> DSRS;
 typedef std::vector<int> IDSR;
 typedef std::vector<IDSR> IDSRS;
-static const std::string PYROOT = "/home/xyz/code1/DS/py/";
+static const std::string PYROOT = "e:/code/DS/py-win/";
 class Tpy {
 public:
 	static IDSRS PPI(PyObject *pyResult) {
@@ -191,7 +195,7 @@ public:
 	}
 };
 
-#ifdef PYKF
+
 class KF {
 private:
 	static KF *self_;
@@ -314,7 +318,6 @@ public:
 		return true;
 	}
 };
-#endif
 
 
 
@@ -499,4 +502,6 @@ private:
 		return (pyResult != NULL);
 	}
 };
+#endif
+
 #endif

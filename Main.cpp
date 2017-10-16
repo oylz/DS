@@ -11,6 +11,9 @@ KF *KF::self_ = NULL;
 
 
 TTracker *_tt = NULL;
+//#define UBC
+
+
 void DrawTrack(cv::Mat frame,
                    const KalmanTracker& track
                    ){
@@ -102,7 +105,7 @@ void ReadRcFileTotal(const std::string &file) {
 }
 std::string _rcFile = "";
 std::string _imgDir;
-VideoWriter *_vw = NULL;
+cv::VideoWriter *_vw = NULL;
 bool _isShow = false;
 int _imgCount = 0;
 
@@ -185,7 +188,7 @@ void ExtractFeature(const cv::Mat &in,
 		cv::Mat &face = faces[i];
 		cv::Rect rc = cv::Rect(i*maxw + 5, 5, face.cols, face.rows);
 		rcs.push_back(rc);
-		Mat tmp = frame(rc);
+		cv::Mat tmp = frame(rc);
 		face.copyTo(tmp);
 	}
 	std::vector<FEATURE> newfts;
@@ -195,9 +198,9 @@ void ExtractFeature(const cv::Mat &in,
 	}
 }
 #endif
-void CB(Mat &frame, int num){
+void CB(cv::Mat &frame, int num){
 	if (_vw == NULL) {
-		_vw = new VideoWriter("out.avi", CV_FOURCC('M', 'J', 'P', 'G'), 25.0, Size(frame.cols, frame.rows));
+		_vw = new cv::VideoWriter("out.avi", CV_FOURCC('M', 'J', 'P', 'G'), 25.0, cv::Size(frame.cols, frame.rows));
 	}
 	int64_t tm0 = gtm();
 	if (_rcMap.empty()) {
@@ -208,7 +211,7 @@ void CB(Mat &frame, int num){
 	if (it != _rcMap.end()) {
 		rcs = it->second;
 	}
-	Mat mm;
+	cv::Mat mm;
 	{
 		mm = frame.clone();
 		for(int i = 0; i < rcs.size(); i++){
@@ -255,11 +258,11 @@ void CB(Mat &frame, int num){
 	//(*_vw) << frame;
 	if(_isShow){
 		std::string disp = "frame";
-		resize(mm, mm, Size(mm.cols/2, mm.rows/2));
-		resize(frame, frame, Size(frame.cols/2, frame.rows/2));
-		imshow("mm", mm);
-		imshow(disp, frame);
-		waitKey(1);
+		cv::resize(mm, mm, cv::Size(mm.cols/2, mm.rows/2));
+		cv::resize(frame, frame, cv::Size(frame.cols/2, frame.rows/2));
+		cv::imshow("mm", mm);
+		cv::imshow(disp, frame);
+		cv::waitKey(1);
 	}
 }
 
@@ -269,7 +272,7 @@ void Go() {
 		std::string path = root;
 		path += to6dStr(i);
 		path += ".jpg";
-		cv::Mat mat = imread(path);
+		cv::Mat mat = cv::imread(path);
 		CB(mat, i);
 		printf("finish %d frame\n", i);
 	}
@@ -303,8 +306,13 @@ int main(int argc, char **argv){
 		return 0;
 	}
 	// for speed, now init 100boxes to init run extracefeature
+#ifdef UBC
 	if(1){
+#ifdef WIN32
+		Mat frame = cv::imread("e:/code/deep_sort-master/MOT16/tt/xyz/img1/000001.jpg");
+#else
 		Mat frame = cv::imread("../xyz/img1/000001.jpg");
+#endif
 		std::vector<Detection> dets;
 		std::vector<FEATURE> fts;
 		std::vector<cv::Rect> rcs;
@@ -326,14 +334,15 @@ int main(int argc, char **argv){
 					rcs.push_back(rc);
 		ExtractFeature(frame, rcs, fts);
 	}
+#endif
 	KF::Instance()->Init();
 	_tt = new TTracker();
 	NearestNeighborDistanceMetric::Instance()->Init(0.2, 100);
 
-	//_imgDir = "e:/code/deep_sort-master/MOT16/ff/fr/img1/";
-	//_rcFile = "e:/code/deep_sort-master/MOT16/ff/fr/det/det.txt";
-	_imgDir = "/home/xyz/code1/xyz/img1/";
-	_rcFile = "/home/xyz/code1/xyz/det/det.txt";
+	_imgDir = "e:/code/deep_sort-master/MOT16/tt/xyz/img1/";
+	_rcFile = "e:/code/deep_sort-master/MOT16/tt/xyz/det/det.txt";
+	//_imgDir = "/home/xyz/code1/xyz/img1/";
+	//_rcFile = "/home/xyz/code1/xyz/det/det.txt";
 	_imgCount = 680;// 2001;// 750;// 680;
 	Go();
 	return 0;
