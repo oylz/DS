@@ -123,14 +123,14 @@ typedef std::vector<IDSR> IDSRS;
             output_tensors[0].flat<float>().data();
         int len = output_tensors[0].flat<float>().size() / count;
         for (int i = 0; i < count; i++) {
-            printf("begin====\n");
+            //printf("begin====\n");
 			FFEATURE ft;
             for (int j = 0; j < len; j++) {
 				ft(j) = tensor_buffer[i*len + j];
-                printf(",%f", tensor_buffer[i*len+j]);
+                //printf(",%f", tensor_buffer[i*len+j]);
             }
 			fts.push_back(ft);
-            printf("\nend====\n");
+            //printf("\nend====\n");
         }            
 		return true;
 	}
