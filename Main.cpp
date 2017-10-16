@@ -11,7 +11,7 @@ KF *KF::self_ = NULL;
 
 
 TTracker *_tt = NULL;
-//#define UBC
+#define UBC
 
 
 void DrawTrack(cv::Mat frame,
@@ -339,10 +339,10 @@ int main(int argc, char **argv){
 	_tt = new TTracker();
 	NearestNeighborDistanceMetric::Instance()->Init(0.2, 100);
 
-	_imgDir = "e:/code/deep_sort-master/MOT16/tt/xyz/img1/";
-	_rcFile = "e:/code/deep_sort-master/MOT16/tt/xyz/det/det.txt";
-	//_imgDir = "/home/xyz/code1/xyz/img1/";
-	//_rcFile = "/home/xyz/code1/xyz/det/det.txt";
+	//_imgDir = "e:/code/deep_sort-master/MOT16/tt/xyz/img1/";
+	//_rcFile = "e:/code/deep_sort-master/MOT16/tt/xyz/det/det.txt";
+	_imgDir = "/home/xyz/code1/xyz/img1/";
+	_rcFile = "/home/xyz/code1/xyz/det/det.txt";
 	_imgCount = 680;// 2001;// 750;// 680;
 	Go();
 	return 0;
