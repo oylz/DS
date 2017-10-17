@@ -8,6 +8,13 @@
 #include "FeatureGetter/FeatureGetter.h"
 #include "HungarianOper.h"
 
+#include <sys/time.h>
+static int64_t line_gtm() {
+	struct timeval tm;
+	gettimeofday(&tm, 0);
+	int64_t re = ((int64_t)tm.tv_sec) * 1000 * 1000 + tm.tv_usec;
+	return re;
+}
 const static int INFTY_COST = 1e+5;
 struct RR {
 	std::vector<std::pair<int, int> > matches;
@@ -40,6 +47,7 @@ public:
         const std::vector<Detection> &detections, 
         IDS *track_indicesi=NULL,
         IDS *detection_indicesi=NULL){
+		int64_t mintm1 = line_gtm();
 		IDS track_indices;
 		IDS detection_indices;
 		if (track_indicesi == NULL) {
@@ -66,6 +74,7 @@ public:
             rr.unmatched_detections = detection_indices;
             return rr;
         }
+	int64_t mintm2 = line_gtm();
         // 5x5
         DYNAMICM cost_matrix = getCostMarixFun(
             tracks, detections, &track_indices, &detection_indices);
@@ -78,10 +87,12 @@ public:
 				}
 			}
 		}
+	int64_t mintm3 = line_gtm();
 		//std::cout << "\n----222mmmmm----\n" << cost_matrix << "\n----222vvvvv-----\n" << std::endl;
 		//Eigen::Matrix<float, -1, 2> indices = KF::Instance()->LinearAssignmentForCpp(cost_matrix);
 		Eigen::Matrix<float, -1, 2> indices =
 			HungarianOper::Solve(cost_matrix);
+	int64_t mintm4 = line_gtm();
 		//std::cout << "indices:\n" << indices << std::endl;
         //xyztodo: indices = linear_assignment(cost_matrix)
         // (-1, 2)
@@ -136,6 +147,11 @@ public:
                 }
             //}
         }
+	int64_t mintm5 = line_gtm();
+	std::cout << "min_cost_matching----mintm2-mintm1:" << (mintm2-mintm1) <<
+			", mintm3-mintm1:" << (mintm3-mintm1) << 
+			", mintm4-mintm1:" << (mintm4-mintm1) << 
+			", mintm5-mintm1:" << (mintm5-mintm1) << "\n";
         return rr;
     }
 
@@ -146,6 +162,7 @@ public:
         const std::vector<Detection> &detections,
         IDS *track_indicesi = NULL,
         IDS *detection_indicesi = NULL){
+		int64_t ctm0 = line_gtm();
 		IDS track_indices;
 		IDS detection_indices;
         if(track_indicesi == NULL) {
@@ -169,6 +186,7 @@ public:
         std::map<int, int> tmpMap;
         IDS unmatched_detections = detection_indices;
         for (int level = 0; level < cascade_depth; level++) {
+		int64_t ctm1 = line_gtm();
             if (unmatched_detections.empty()) {
                 break;
             }
@@ -190,6 +208,8 @@ public:
                 re.matches.push_back(pa);
                 tmpMap.insert(pa);
             }
+		int64_t ctm2 = line_gtm();
+		std::cout << "cascade("<< level << ")----ctm2-ctm1:" << (ctm2-ctm1) << "\n";
         }
         re.unmatched_detections = unmatched_detections;
         for (int i = 0; i < track_indices.size(); i++) {
@@ -199,7 +219,8 @@ public:
                 re.unmatched_tracks.push_back(tid);
             }
         }
-
+	int64_t ctm4 = line_gtm();
+	std::cout << "cascade----ctm4-ctm0:" << (ctm4-ctm0) << "\n";
         return re;
     }
 

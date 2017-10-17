@@ -16,6 +16,16 @@
 #include <tensorflow/cc/ops/math_ops.h>
 namespace tf = tensorflow;
 
+#include <sys/time.h>
+
+
+static int64_t fgtm() {
+	struct timeval tm;
+	gettimeofday(&tm, 0);
+	int64_t re = ((int64_t)tm.tv_sec) * 1000 * 1000 + tm.tv_usec;
+	return re;
+}
+
 
 FeatureGetter *FeatureGetter::self_ = NULL;
 
@@ -110,11 +120,14 @@ typedef std::vector<IDSR> IDSRS;
         std::vector<std::string> outnames;
         outnames.push_back("truediv");
         std::vector<std::string> ts;
+	int64_t ftm1 = fgtm();	
         auto status = session->Run(
             ins,
             outnames,
             ts,
             &output_tensors);
+	int64_t ftm2 = fgtm();
+	std::cout << "session.run----rcs.size():" << rcs.size() << ", ftm2-ftm1:" << (ftm2-ftm1) << "\n";
         if (!status.ok()) {
             printf("error 3%s \n", status.ToString().c_str());
             return false;
