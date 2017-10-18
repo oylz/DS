@@ -10,6 +10,7 @@ C++ implementation of Simple Online Realtime Tracking with a Deep Association Me
 
 (3) boost
 
+(4)tensorflow1.4
 
 2. build
 
@@ -32,10 +33,19 @@ _imgCount = 680;  // frames count
 
 ./r.sh
 
+5.tips
+
+tensorflow build:
+
+(1) ./configure
+
+(2) bazel build -c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.2 --config=cuda  tensorflow:libtensorflow_cc.so
 
 
-5. todo
 
-extract feature by c++
+
+
+
+
 
 
