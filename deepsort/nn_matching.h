@@ -4,10 +4,23 @@
 #include "Detection.h"
 #include <Eigen>
 #include <map>
+#include <sys/time.h>
 
+#ifdef USETBB
+#include <tbb.h>
+#include <map>
+#endif
+
+
+static int64_t nn_gtm() {
+	struct timeval tm;
+	gettimeofday(&tm, 0);
+	int64_t re = ((int64_t)tm.tv_sec) * 1000 * 1000 + tm.tv_usec;
+	return re;
+}
 Eigen::VectorXf _nn_cosine_distance(const FEATURESS &x, 
 	const FEATURESS &y){
-	
+	int64_t nntm1 = nn_gtm();	
 	FEATURESS a = x;
 	FEATURESS b = y;
 	//std::cout << "a---b\n" << a << "\na----e\n" << std::endl;
@@ -45,6 +58,8 @@ Eigen::VectorXf _nn_cosine_distance(const FEATURESS &x,
 		re(col) = min;
 	}
 #endif
+	int64_t nntm2 = nn_gtm();	
+	std::cout << "_nn_cosine_distance(" << x.rows() << "," << y.rows() << ")----nntm2-nntm1:" << (nntm2-nntm1) << "\n";
 	//std::cout << "re---b\n" << re << "\nre----e\n" << std::endl;
 	return re;
 }
@@ -98,13 +113,48 @@ public:
                 it = samples_.find(iid);
             }
 			it->second.push_back(feature);
-            if(samples_.size() > budget_){
+#if 1
+			std::vector<FEATURE>::iterator ii = it->second.begin();
+			if(it->second.size() > budget_){
+				it->second.erase(ii);
+			}
+#else
+            /*if(samples_.size() > budget_){
                 samples_.erase(samples_.begin());
-            }
+            }*/
+#endif
         }
     }
+
     DYNAMICM distance(const FEATURESS &features, const IDS &ids){
-		DYNAMICM cost_matrix = DYNAMICM(ids.size(), features.rows());
+#ifdef USETBB
+	static DYNAMICM cost_matrix;
+	cost_matrix = DYNAMICM(ids.size(), features.rows());
+	int64_t dtm0 = nn_gtm();
+
+	using namespace tbb;
+ 	parallel_for( blocked_range<size_t>(0,ids.size()),
+                [=](const blocked_range<size_t> &r){
+                        for(int i = r.begin(); i != r.end(); ++i){
+ 			        int iid = ids[i];
+				std::vector<FEATURE> &ftsvec = samples_[iid];
+				FEATURESS fts(ftsvec.size(), 128);
+				for (int k = 0; k < ftsvec.size(); k++) {
+					fts.row(k) = ftsvec[k];
+				}
+				int64_t dtm1 = nn_gtm();
+				cost_matrix.row(i) = _nn_cosine_distance(fts, features);
+				int64_t dtm2 = nn_gtm();
+				std::cout << "distance(" << iid<< ")----dtm2-dtm1:" << (dtm2-dtm1) << "\n";
+                        }
+                   }
+                );
+#else
+	static DYNAMICM cost_matrix;
+	cost_matrix = DYNAMICM(ids.size(), features.rows());
+	int64_t dtm0 = nn_gtm();
+
+	#pragma omp parallel for
         for(int i = 0; i < ids.size(); i++){
             int iid = ids[i];
 			std::vector<FEATURE> &ftsvec = samples_[iid];
@@ -112,8 +162,14 @@ public:
 			for (int k = 0; k < ftsvec.size(); k++) {
 				fts.row(k) = ftsvec[k];
 			}
+			int64_t dtm1 = nn_gtm();
 			cost_matrix.row(i) = _nn_cosine_distance(fts, features);
+			int64_t dtm2 = nn_gtm();
+			std::cout << "distance(" << iid<< ")----dtm2-dtm1:" << (dtm2-dtm1) << "\n";
         }
+#endif
+		int64_t dtm4 = nn_gtm();
+		std::cout << "distance----dtm4-dtm0:" << (dtm4-dtm0) << "\n";
 		//std::cout << "\nb-haha\n" << cost_matrix << "\ne-haha\n";
 		return cost_matrix;
     }
