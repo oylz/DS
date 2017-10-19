@@ -126,7 +126,7 @@ void CB(cv::Mat &frame, int num){
 		cv::resize(frame, frame, cv::Size(frame.cols/2, frame.rows/2));
 		cv::imshow("mm", mm);
 		cv::imshow(disp, frame);
-		cv::waitKey();
+		cv::waitKey(1);
 	}
 }
 

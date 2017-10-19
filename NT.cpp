@@ -185,7 +185,8 @@ std::map<int, DSResult> NT::UpdateAndGet(const cv::Mat &frame,
 	std::map<int, DSResult> map;
 	std::vector<KalmanTracker*> &kalmanTrackers =
 			tt_->kalmanTrackers_;
-	
+
+	std::vector<std::pair<int, cv::Rect> > idrcs;	
     	for (const auto& track : kalmanTrackers){
 		int id = (int)track->track_id;
 		printf("trackid:%d, is_confirmed:%d, time_since_update:%d\n", id, track->is_confirmed(), track->time_since_update_);
@@ -206,19 +207,8 @@ std::map<int, DSResult> NT::UpdateAndGet(const cv::Mat &frame,
 		tr.rc_ = rc;
 		tr.oriPos_ = oriPos;
 		if(!rcsin.empty()){
-			FDSSTTrackerP fdsst(new FDSSTTracker());
+			idrcs.push_back(std::make_pair(id, rc));	
 			printf("id:%d, oriPos:%d, rcsin.size():%d, rcs.size():%d\n", id, oriPos, rcsin.size(), rcs.size());
-			/*if(rc.x<0)rc.x = 0;
-			if(rc.y<0)rc.y = 0;
-			int ww = frame.cols;
-			int hh = frame.rows;
-			if(rc.x+rc.width>ww)rc.width=ww-rc.x;
-			if(rc.y+rc.height>hh)rc.height=hh-rc.y;
-
-			if(rc.x>=0 && rc.y>=0 && rc.width>5 && rc.height>5){
-			*/
-			fdsst->init(rc, ff);
-			fdssts_.insert(std::make_pair(id, fdsst));
 			
 		}
 		if (!track->is_confirmed() || track->time_since_update_ > 0) {
@@ -227,6 +217,15 @@ std::map<int, DSResult> NT::UpdateAndGet(const cv::Mat &frame,
 
 		map.insert(std::make_pair(id, tr));
     	}
+	for(int i = 0; i < idrcs.size(); i++){
+		std::pair<int, cv::Rect> pa = idrcs[i];
+		int id = pa.first;
+		cv::Rect rc = pa.second;
+
+		FDSSTTrackerP fdsst(new FDSSTTracker());
+		fdsst->init(rc, ff);
+		fdssts_.insert(std::make_pair(id, fdsst));
+	}
 	return map;
 }
 
