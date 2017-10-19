@@ -7,7 +7,7 @@
 #include <iterator>
 #include "iou_matching.h"
 #include "FeatureGetter/FeatureGetter.h"
-
+#include "../NTN.h"
 
 DYNAMICM getCostMatrixByNND(const std::vector<KalmanTracker*> &kalmanTrackers,
 	const std::vector<Detection> &dets,
@@ -34,13 +34,14 @@ public:
 		p = this;
     }
 
-    void update(const std::vector<Detection> &detections){
+    NewAndDelete update(const std::vector<Detection> &detections){
+	NewAndDelete re;
+
 	int64_t uptm1 = line_gtm();
         for(KalmanTracker *kalmanTrack : kalmanTrackers_){
             kalmanTrack->predict(*KF::Instance());
         }
 
-        
 	int64_t uptm2 = line_gtm();
         //# Run matching cascade.
         RR rr = this->_match(detections);
@@ -63,7 +64,8 @@ public:
         //# -unmatches(detect)    
         for(int i = 0; i < rr.unmatched_detections.size(); i++){
             int detection_idx = rr.unmatched_detections[i];
-            this->_NewTrack(detections[detection_idx]);
+            int id = this->_NewTrack(detections[detection_idx]);
+		re.news_.insert(std::make_pair(id, detections[detection_idx].oriPos_));
         }
         
 	int64_t uptm4 = line_gtm();
@@ -74,6 +76,7 @@ public:
 			for (it = kalmanTrackers_.begin(); it != kalmanTrackers_.end(); ++it) {
 				KalmanTracker *p = *it;
 				if (p->is_deleted()) {
+					re.deletes_.push_back(p->track_id);
 					kalmanTrackers_.erase(it);
 					delete p;
 					cn = true;
@@ -132,6 +135,7 @@ public:
 			", uptm4-uptm1:" << (uptm4-uptm1) << 
 			", uptm5-uptm1:" << (uptm5-uptm1) << 
 			", uptm6-uptm1:" << (uptm6-uptm1) << "\n";
+	return re;
     }
     
 private:        
@@ -213,13 +217,15 @@ private:
         return re;
     }    
 
-    void _NewTrack(const Detection &detection){
+    int _NewTrack(const Detection &detection){
+	int id = _next_id_;
         std::pair<MEAN, VAR>  pa = 
                     KF::Instance()->initiate(detection.to_xyah());
         kalmanTrackers_.push_back(new KalmanTracker(
             pa.first, pa.second, _next_id_, n_init_, max_age_,
-            detection.feature_, true));
+            detection.feature_, true, detection.oriPos_));
         _next_id_ += 1;
+	return id;
     }
 };
 

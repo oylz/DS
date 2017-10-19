@@ -5,12 +5,13 @@
 NT *_tt = NULL;
 
 
-void DrawData(cv::Mat frame){
-	std::map<int, cv::Rect> map = _tt->Get();
-	std::map<int, cv::Rect>::iterator it;
+void DrawData(cv::Mat mm, cv::Mat frame, const std::map<int, DSResult> &map, 
+		const std::vector<cv::Rect> &outRcs,
+		bool detect){
+	std::map<int, DSResult>::const_iterator it;
 	for(it = map.begin(); it != map.end(); ++it){
 		CvScalar clr = cvScalar(0, 255, 0);
-		cv::Rect rc = it->second;
+		cv::Rect rc = it->second.rc_;
     		cv::rectangle(frame, rc, clr);
 		std::string disp = toStr(it->first);
 		cv::putText(frame, 
@@ -19,6 +20,20 @@ void DrawData(cv::Mat frame){
 			CV_FONT_HERSHEY_SIMPLEX, 
 			0.6, 
 			cv::Scalar(0, 0, 255));
+	}
+	//
+	CvScalar clr = cvScalar(0, 0, 255);
+	for(cv::Rect rc:outRcs){
+		cv::rectangle(mm, rc, clr);	
+		if(detect){
+			std::string disp = "detect";
+			cv::putText(frame, 
+				disp, 
+				cvPoint(100, 100), 
+				CV_FONT_HERSHEY_SIMPLEX, 
+				1, 
+				cv::Scalar(0, 0, 255));
+		}
 	}
 }
 
@@ -98,17 +113,20 @@ void CB(cv::Mat &frame, int num){
 	if (it != _rcMap.end()) {
 		rcs = it->second;
 	}
-	_tt->Update(frame, rcs, num);
+	std::vector<cv::Rect> outRcs;
+	std::map<int, DSResult> map = _tt->UpdateAndGet(frame, rcs, num, outRcs);
 	Mat mm = frame.clone();
-	DrawData(frame);
+	bool detect = (!rcs.empty());
+	DrawData(mm, frame, map, outRcs, detect);
+	printf("finish %d frame\n", num);
 	//(*_vw) << frame;
 	if(_isShow){
 		std::string disp = "frame";
-		//cv::resize(mm, mm, cv::Size(mm.cols/2, mm.rows/2));
-		//cv::resize(frame, frame, cv::Size(frame.cols/2, frame.rows/2));
+		cv::resize(mm, mm, cv::Size(mm.cols/2, mm.rows/2));
+		cv::resize(frame, frame, cv::Size(frame.cols/2, frame.rows/2));
 		cv::imshow("mm", mm);
 		cv::imshow(disp, frame);
-		cv::waitKey(1);
+		cv::waitKey();
 	}
 }
 
@@ -120,7 +138,6 @@ void Go() {
 		path += ".jpg";
 		cv::Mat mat = cv::imread(path);
 		CB(mat, i);
-		printf("finish %d frame\n", i);
 	}
 
 }
@@ -139,7 +156,8 @@ int main(int argc, char **argv){
 	//_imgDir = "e:/code/deep_sort-master/MOT16/tt/xyz/img1/";
 	//_rcFile = "e:/code/deep_sort-master/MOT16/tt/xyz/det/det.txt";
 	_imgDir = "/home/xyz/code1/xyz/img1/";
-	_rcFile = "/home/xyz/code1/xyz/det/det.txt";
+	//_rcFile = "/home/xyz/code1/xyz/det/102_mod5.txt";
+	_rcFile = "/home/xyz/code/test/pp/FaceNumGetter/out/102.txt";
 	_imgCount = 680;// 2001;// 750;// 680;
 	Go();
 	return 0;

@@ -19,6 +19,7 @@ struct Detection {
 	DSBOX tlwh_;
 	float confidence_;
 	FEATURE feature_;
+	int oriPos_ = -1;
 	Detection(const DSBOX &tlwh, float confidence, const FEATURE &feature) {
 		tlwh_ = tlwh;
 		confidence_ = confidence;

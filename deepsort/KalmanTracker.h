@@ -17,6 +17,7 @@ public:
 	VAR covariance_;
 	int track_id = 0;
 	std::vector<FEATURE> features_;
+	int oriPos_;
 private:
 	int hits_ = 0;
 	int age_ = 0;
@@ -30,7 +31,7 @@ public:
 		int tid, 
 		int n_init, 
 		int max_age,
-        const FEATURE &feature, bool featureFull=false){
+        const FEATURE &feature, bool featureFull, int oriPos){
         
 		mean_ = mean;
 		covariance_ = covariance;
@@ -46,6 +47,7 @@ public:
 
 		_n_init_ = n_init;
 		_max_age_ = max_age;
+		oriPos_ = oriPos;
     }
     DSBOX to_tlwh() const{
 		DSBOX ret;
@@ -64,10 +66,13 @@ public:
 		ret(3) = ret(1) + ret(3);
 		return ret;
     }
-    void predict(const KF &kalmanFilter){
+    void predict(const KF &kalmanFilter, bool only=false){
 		std::pair<MEAN, VAR> pa = kalmanFilter.predict(mean_, covariance_);
 		mean_ = pa.first;
 		covariance_ = pa.second;
+		if(only){// 2017.10.18
+			return;
+		}
 		age_ += 1;
 		time_since_update_ += 1;
     }
