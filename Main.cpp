@@ -126,7 +126,7 @@ void CB(cv::Mat &frame, int num){
 		cv::resize(frame, frame, cv::Size(frame.cols/2, frame.rows/2));
 		cv::imshow("mm", mm);
 		cv::imshow(disp, frame);
-		cv::waitKey(1);
+		cv::waitKey();
 	}
 }
 
@@ -155,10 +155,14 @@ int main(int argc, char **argv){
 
 	//_imgDir = "e:/code/deep_sort-master/MOT16/tt/xyz/img1/";
 	//_rcFile = "e:/code/deep_sort-master/MOT16/tt/xyz/det/det.txt";
-	_imgDir = "/home/xyz/code1/xyz/img1/";
+	//_imgDir = "/home/xyz/code1/xyz/img1/";
 	//_rcFile = "/home/xyz/code1/xyz/det/102_mod5.txt";
-	_rcFile = "/home/xyz/code/test/pp/FaceNumGetter/out/102.txt";
-	_imgCount = 680;// 2001;// 750;// 680;
+	//_rcFile = "/home/xyz/code/test/pp/FaceNumGetter/out/102.txt";
+
+
+	_imgDir = "/home/xyz/code1/GEP/FrameBuffer/imglog/img1/";
+	_rcFile = "/home/xyz/code1/GEP/FrameBuffer/imglog/det/det.txt";
+	_imgCount = 650;// 2001;// 750;// 680;
 	Go();
 	return 0;
 }

@@ -208,7 +208,9 @@ std::map<int, DSResult> NT::UpdateAndGet(const cv::Mat &frame,
 		tr.oriPos_ = oriPos;
 		if(!rcsin.empty()){
 			idrcs.push_back(std::make_pair(id, rc));	
-			printf("id:%d, oriPos:%d, rcsin.size():%d, rcs.size():%d\n", id, oriPos, rcsin.size(), rcs.size());
+			printf("id:%d, rc:(%d, %d, %d, %d), oriPos:%d, rcsin.size():%d, rcs.size():%d\n", 
+					id, rc.x, rc.y, rc.width, rc.height,
+					oriPos, rcsin.size(), rcs.size());
 			
 		}
 		if (!track->is_confirmed() || track->time_since_update_ > 0) {
@@ -221,6 +223,8 @@ std::map<int, DSResult> NT::UpdateAndGet(const cv::Mat &frame,
 		std::pair<int, cv::Rect> pa = idrcs[i];
 		int id = pa.first;
 		cv::Rect rc = pa.second;
+		printf("id:%d, rc:(%d, %d, %d, %d)\n", 
+				id, rc.x, rc.y, rc.width, rc.height);
 
 		FDSSTTrackerP fdsst(new FDSSTTracker());
 		fdsst->init(rc, ff);

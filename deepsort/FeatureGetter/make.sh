@@ -14,7 +14,7 @@ LLIBS="-lopencv_corexyz -lopencv_imgprocxyz -lopencv_highguixyz -ltensorflow_cc 
 #LLIBS="-lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lopencv_highgui -lopencv_video -lopencv_videoio -ltensorflow_cc"
 
 rm libFeatureGetter.so -rf
-g++ --std=c++14 -ggdb -fPIC -shared -o libFeatureGetter.so $IINCLUDE $LLIBPATH $LLIBS FeatureGetter.cpp 
+g++ --std=c++14 -fPIC -shared -o libFeatureGetter.so $IINCLUDE $LLIBPATH $LLIBS FeatureGetter.cpp 
 
 
 

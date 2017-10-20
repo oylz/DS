@@ -23,7 +23,7 @@ rm DS -rf
 function BOPENMP(){
 	#LLIBS="-lopencv_core -lopencv_imgproc -lopencv_imgcodecs -lopencv_highgui -lopencv_video -lopencv_videoio -lFeatureGetter"
 	LLIBS="-lopencv_corexyz -lopencv_imgprocxyz  -lopencv_highguixyz -lFeatureGetter -lglog -lboost_system"
-	g++ --std=c++14 -ggdb -fopenmp -o DS $IINCLUDE $LLIBPATH $LLIBS deepsort/munkres/munkres.cpp deepsort/munkres/adapters/adapter.cpp deepsort/munkres/adapters/boostmatrixadapter.cpp  NT.cpp fdsst/fdssttracker.cpp fdsst/fhog.cpp Main.cpp
+	g++ --std=c++14 -fopenmp -o DS $IINCLUDE $LLIBPATH $LLIBS deepsort/munkres/munkres.cpp deepsort/munkres/adapters/adapter.cpp deepsort/munkres/adapters/boostmatrixadapter.cpp  NT.cpp fdsst/fdssttracker.cpp fdsst/fhog.cpp Main.cpp
 }
 
 
