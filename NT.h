@@ -39,10 +39,35 @@ private:
 		const std::vector<cv::Rect> &rcs, 
 		int num,
 		const std::vector<int> &oriPos);
-
+private:
+	cv::Rect ToOriRect(const cv::Rect &rc){
+		cv::Rect re;
+		float x = ((float)rc.x)/scale_;
+		float y = ((float)rc.y)/scale_;
+		float w = ((float)rc.width)/scale_;
+		float h = ((float)rc.height)/scale_;
+		re.x = x;
+		re.y = y;
+		re.width = w;
+		re.height = h;
+		return re;
+	}
+	cv::Rect ToScaleRect(const cv::Rect &rc){
+		cv::Rect re;
+		float x = ((float)rc.x)*scale_;
+		float y = ((float)rc.y)*scale_;
+		float w = ((float)rc.width)*scale_;
+		float h = ((float)rc.height)*scale_;
+		re.x = x;
+		re.y = y;
+		re.width = w;
+		re.height = h;
+		return re;
+	}
 private:
 	TTrackerP tt_;
 	std::map<int, FDSSTTrackerP> fdssts_;
+	float scale_ = 0.25;
 };
 #endif
 

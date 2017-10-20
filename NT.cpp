@@ -3,13 +3,13 @@
 #include "./deepsort/tracker.h"
 #include "StrCommon.h"
 #include "fdsst/fdssttracker.hpp"
-
+#include <boost/thread/mutex.hpp>
 
 
 NearestNeighborDistanceMetric *NearestNeighborDistanceMetric::self_ = NULL;
 KF *KF::self_ = NULL;
 
-#define UBC
+//#define UBC
 
 
 
@@ -74,7 +74,7 @@ bool NT::Init(){
 		return false;
 	}
 	KF::Instance()->Init();
-#ifdef UBC
+#if 1 //def UBC
 		Mat frame = cv::imread("/home/xyz/code1/xyz/img1/000001.jpg");
 		std::vector<Detection> dets;
 		std::vector<FEATURE> fts;
@@ -82,6 +82,7 @@ bool NT::Init(){
 		srand((unsigned)time(NULL));
 		int width = frame.cols;
 		int height = frame.rows;
+		for(int i = 0; i < 30; i++){
 					int x = rand()%width;
 					int y = rand()%height;
 					int w = 100;
@@ -95,6 +96,7 @@ bool NT::Init(){
 					}
 					cv::Rect rc(x, y, w, h);	
 					rcs.push_back(rc);
+		}
 		ExtractFeature(frame, rcs, fts);
 #endif
 	NearestNeighborDistanceMetric::Instance()->Init(0.2, 100);
@@ -136,14 +138,52 @@ NewAndDelete NT::UpdateDS(const cv::Mat &frame, const std::vector<cv::Rect> &rcs
 }
 
 
+struct RRS{
+	void Push(const cv::Rect &rc){
+		boost::mutex::scoped_lock lock(mutex_);
+		rcs_.push_back(rc);
+	}
+	void Get(std::vector<cv::Rect> &rcs){
+		rcs = rcs_;
+	}
+private:
+	std::vector<cv::Rect> rcs_;
+	boost::mutex mutex_;
+};
+struct FFS{
+public:
+	void Push(int id, const FDSSTTrackerP &ff){
+		boost::mutex::scoped_lock lock(mutex_);
+		ffs_.push_back(std::make_pair(id, ff));
+	}
+	void Get(std::vector<std::pair<int, FDSSTTrackerP> > &ffs){
+		ffs = ffs_;
+	}
+private:
+	std::vector<std::pair<int, FDSSTTrackerP > > ffs_;
+	boost::mutex mutex_;
+};
 
 // for framebuffer
 void NT::UpdateFDSST(const Mat &frame, std::vector<cv::Rect> &rcs){
 	std::map<int, FDSSTTrackerP>::iterator it;
 	std::vector<int> lostIds;
+	RRS rrs;
+	std::vector<FDSSTTrackerP> ffs;
 	for(it = fdssts_.begin(); it != fdssts_.end(); ++it){
-		//FDSSTTrackerP fdsst = it->second;
-		cv::Rect rc = it->second->update(frame);
+		FDSSTTrackerP fdsst = it->second;
+		ffs.push_back(fdsst);
+	}
+	#pragma omp parallel for
+	for(int i = 0; i < ffs.size(); i++){
+		cv::Rect rc = ffs[i]->update(frame);
+		rrs.Push(rc);
+	}
+	//
+	std::vector<cv::Rect> rrcs;
+	rrs.Get(rrcs);
+	for(int i = 0; i < rrcs.size(); i++){
+		cv::Rect rc = rrcs[i];
 		int ww = frame.cols;
 		int hh = frame.rows;
 		int min = 8;
@@ -154,7 +194,7 @@ void NT::UpdateFDSST(const Mat &frame, std::vector<cv::Rect> &rcs){
 			lostIds.push_back(it->first);
 			continue;
 		}
-		rcs.push_back(rc);
+		rcs.push_back(ToOriRect(rc));
 	}
 	// remove
 	for(int id:lostIds){
@@ -169,14 +209,15 @@ std::map<int, DSResult> NT::UpdateAndGet(const cv::Mat &frame,
 	std::vector<cv::Rect> rcs = rcsin;
         
 	//{	
-	Mat ff;
-        cvtColor(frame, ff, cv::COLOR_RGB2GRAY);
+	Mat ffMat;
+        cvtColor(frame, ffMat, cv::COLOR_RGB2GRAY);
+	resize(ffMat, ffMat, Size(ffMat.cols*scale_, ffMat.rows*scale_));
 	//}
 	if(!rcsin.empty()){
 		fdssts_.clear();
 	}	
 	else{
-		UpdateFDSST(ff, rcs);
+		UpdateFDSST(ffMat, rcs);
 	}
 	outRcs = rcs;
 	NewAndDelete nad = UpdateDS(frame, rcs, num, oriPos);
@@ -219,6 +260,8 @@ std::map<int, DSResult> NT::UpdateAndGet(const cv::Mat &frame,
 
 		map.insert(std::make_pair(id, tr));
     	}
+	FFS ffs;
+	#pragma omp parallel for
 	for(int i = 0; i < idrcs.size(); i++){
 		std::pair<int, cv::Rect> pa = idrcs[i];
 		int id = pa.first;
@@ -227,8 +270,14 @@ std::map<int, DSResult> NT::UpdateAndGet(const cv::Mat &frame,
 				id, rc.x, rc.y, rc.width, rc.height);
 
 		FDSSTTrackerP fdsst(new FDSSTTracker());
-		fdsst->init(rc, ff);
-		fdssts_.insert(std::make_pair(id, fdsst));
+		fdsst->init(ToScaleRect(rc), ffMat);
+		ffs.Push(id, fdsst);
+	}
+	std::vector<std::pair<int, FDSSTTrackerP> > pps;
+	ffs.Get(pps);
+	for(int i = 0; i < pps.size(); i++){
+		std::pair<int, FDSSTTrackerP> pa = pps[i];
+		fdssts_.insert(pa);
 	}
 	return map;
 }
