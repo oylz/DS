@@ -1,15 +1,4 @@
 
-#ifdef USE_FACE_NET
-#include "FaceNetFeatureGetter.cpp"
-
-#else
-	#ifdef USE_MOBILE_NET
-		#include "MobileNetFeatureGetter.cpp"
-	#else
-		#ifdef USE_CAFFE_SHUFFE_NET
-			#include "CaffeShuffeNetFeatureGetter.cpp"
-		#else
-
 #include "FeatureGetter.h"
 
 
@@ -40,7 +29,7 @@ static int64_t fgtm() {
 
 FeatureGetter *FeatureGetter::self_ = NULL;
 
-typedef unsigned char uint8;
+typedef float uint8;
 
 std::unique_ptr<tf::Session> session;
 
@@ -67,6 +56,21 @@ void tobuffer(const std::vector<cv::Mat> &imgs, uint8 *buf) {
 		}
 	}
 }
+void tobufferA(const std::vector<cv::Mat> &imgs, float *buf){
+	int pos = 0;
+	for (cv::Mat img : imgs) {
+    		if (img.isContinuous()) {
+      			memcpy(buf+pos, img.ptr<float>(0),
+             			static_cast<size_t>(img.total()) * sizeof(float));
+			pos += static_cast<size_t>(img.total()) * sizeof(float);
+    		} 
+		else {
+			printf("error\n");
+			exit(0);
+      		}
+	}
+}
+
 
 
 
@@ -88,7 +92,7 @@ typedef std::vector<IDSR> IDSRS;
         //------------------
         tf::GraphDef graph_def;
 
-        auto status1 = ReadBinaryProto(tf::Env::Default(), "./data/tt1.pb", &graph_def);
+        auto status1 = ReadBinaryProto(tf::Env::Default(), "./data/mobilenet.pb", &graph_def);
         if (!status1.ok()) {
             printf("ReadBinaryProto failed: %s\n", status1.ToString().c_str());
 			return false;
@@ -113,23 +117,24 @@ typedef std::vector<IDSR> IDSRS;
         std::vector<cv::Mat> mats;
         for(cv::Rect rc:rcs){
             cv::Mat mat1 = img(rc).clone();
-            cv::resize(mat1, mat1, cv::Size(64, 128));
-            mats.push_back(mat1);
+            cv::resize(mat1, mat1, cv::Size(224, 224));
+
+		mats.push_back(mat1);
         }
         int count = mats.size();
         
-        tensorflow::Tensor input_tensor0(tensorflow::DT_UINT8, { count, 128, 64, 3 });
+        tensorflow::Tensor input_tensor0(tensorflow::DT_FLOAT, { count, 224, 224, 3 });
         tobuffer(mats, input_tensor0.flat<uint8>().data());
 
         std::vector<tensorflow::Tensor> output_tensors;
 
         std::vector<std::pair<std::string, tensorflow::Tensor>> ins;
         std::pair<std::string, tensorflow::Tensor> pa;
-        pa.first = "Placeholder";
+        pa.first = "input";
         pa.second = input_tensor0;
         ins.push_back(pa);
         std::vector<std::string> outnames;
-        outnames.push_back("truediv");
+        outnames.push_back("MobilenetV1/Predictions/Reshape_1");
         std::vector<std::string> ts;
 	int64_t ftm1 = fgtm();	
         auto status = session->Run(
@@ -138,7 +143,7 @@ typedef std::vector<IDSR> IDSRS;
             ts,
             &output_tensors);
 	int64_t ftm2 = fgtm();
-	std::cout << "session.run----rcs.size():" << rcs.size() << ", ftm2-ftm1:" << (ftm2-ftm1) << "\n";
+	std::cout << "session.run--mobilenet--rcs.size():" << rcs.size() << ", ftm2-ftm1:" << (ftm2-ftm1) << "\n";
         if (!status.ok()) {
             printf("error 3%s \n", status.ToString().c_str());
             return false;
@@ -150,6 +155,9 @@ typedef std::vector<IDSR> IDSRS;
             //printf("begin====\n");
 			FFEATURE ft;
             for (int j = 0; j < len; j++) {
+				if(j>=128){
+					continue;
+				}
 				ft(j) = tensor_buffer[i*len + j];
                 //printf(",%f", tensor_buffer[i*len+j]);
             }
@@ -158,6 +166,6 @@ typedef std::vector<IDSR> IDSRS;
         }            
 		return true;
 	}
-		#endif
-	#endif
-#endif
+
+
+

@@ -1,15 +1,4 @@
 
-#ifdef USE_FACE_NET
-#include "FaceNetFeatureGetter.cpp"
-
-#else
-	#ifdef USE_MOBILE_NET
-		#include "MobileNetFeatureGetter.cpp"
-	#else
-		#ifdef USE_CAFFE_SHUFFE_NET
-			#include "CaffeShuffeNetFeatureGetter.cpp"
-		#else
-
 #include "FeatureGetter.h"
 
 
@@ -40,7 +29,7 @@ static int64_t fgtm() {
 
 FeatureGetter *FeatureGetter::self_ = NULL;
 
-typedef unsigned char uint8;
+typedef float uint8;
 
 std::unique_ptr<tf::Session> session;
 
@@ -67,6 +56,21 @@ void tobuffer(const std::vector<cv::Mat> &imgs, uint8 *buf) {
 		}
 	}
 }
+void tobufferA(const std::vector<cv::Mat> &imgs, float *buf){
+	int pos = 0;
+	for (cv::Mat img : imgs) {
+    		if (img.isContinuous()) {
+      			memcpy(buf+pos, img.ptr<float>(0),
+             			static_cast<size_t>(img.total()) * sizeof(float));
+			pos += static_cast<size_t>(img.total()) * sizeof(float);
+    		} 
+		else {
+			printf("error\n");
+			exit(0);
+      		}
+	}
+}
+
 
 
 
@@ -88,7 +92,7 @@ typedef std::vector<IDSR> IDSRS;
         //------------------
         tf::GraphDef graph_def;
 
-        auto status1 = ReadBinaryProto(tf::Env::Default(), "./data/tt1.pb", &graph_def);
+        auto status1 = ReadBinaryProto(tf::Env::Default(), "./data/facenet.pb", &graph_def);
         if (!status1.ok()) {
             printf("ReadBinaryProto failed: %s\n", status1.ToString().c_str());
 			return false;
@@ -113,23 +117,54 @@ typedef std::vector<IDSR> IDSRS;
         std::vector<cv::Mat> mats;
         for(cv::Rect rc:rcs){
             cv::Mat mat1 = img(rc).clone();
-            cv::resize(mat1, mat1, cv::Size(64, 128));
-            mats.push_back(mat1);
+            cv::resize(mat1, mat1, cv::Size(160, 160));
+
+ 	/*auto face_mat = face.get_face_image()                                                            
+                          .resize(input_width, input_height)                                           
+                          .convert_to(CV_32FC3)                                                        
+                          .get_cv_mat();*/
+/*	cv::Mat face_mat;
+	//模型希望是rgb顺序
+	cv::cvtColor(mat1, face_mat, CV_BGR2RGB);
+	face_mat = face_mat.reshape(1);
+
+	// whitten
+	cv::Scalar means;
+	cv::Scalar stds;
+	cv::meanStdDev(face_mat, means, stds);
+ 
+	stds[0] =
+    		std::max(float(stds[0]), 1.0f / sqrtf(160 * 160 * 3));
+	face_mat -= means[0];
+	face_mat /= stds[0];
+
+		cv::Mat tmp = face_mat.clone();
+            mats.push_back(tmp);
+*/
+		mats.push_back(mat1);
         }
         int count = mats.size();
         
-        tensorflow::Tensor input_tensor0(tensorflow::DT_UINT8, { count, 128, 64, 3 });
+        tensorflow::Tensor input_tensor0(tensorflow::DT_FLOAT, { count, 160, 160, 3 });
         tobuffer(mats, input_tensor0.flat<uint8>().data());
 
         std::vector<tensorflow::Tensor> output_tensors;
 
         std::vector<std::pair<std::string, tensorflow::Tensor>> ins;
         std::pair<std::string, tensorflow::Tensor> pa;
-        pa.first = "Placeholder";
+        pa.first = "input";
         pa.second = input_tensor0;
         ins.push_back(pa);
+	{
+        	std::pair<std::string, tensorflow::Tensor> pa1;
+        	pa1.first ="phase_train";
+		tf::Tensor phase_train(tf::DT_BOOL, tf::TensorShape());
+		phase_train.scalar<bool>()() = false;
+		pa1.second = phase_train;
+		ins.push_back(pa1);
+	}
         std::vector<std::string> outnames;
-        outnames.push_back("truediv");
+        outnames.push_back("embeddings");
         std::vector<std::string> ts;
 	int64_t ftm1 = fgtm();	
         auto status = session->Run(
@@ -158,6 +193,6 @@ typedef std::vector<IDSR> IDSRS;
         }            
 		return true;
 	}
-		#endif
-	#endif
-#endif
+
+
+

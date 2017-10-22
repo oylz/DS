@@ -20,7 +20,7 @@ void ExtractFeature(const cv::Mat &in,
 	int maxh = 0;
 	int count = rcsin.size(); 
 #ifdef UBC
-	int BC = 8;
+	int BC = 1;
 	if(count < BC)count=BC;
 #endif
 	std::vector<cv::Mat> faces;
@@ -74,7 +74,7 @@ bool NT::Init(){
 		return false;
 	}
 	KF::Instance()->Init();
-#if 1 //def UBC
+#ifdef UBC
 		Mat frame = cv::imread("/home/xyz/code1/xyz/img1/000001.jpg");
 		std::vector<Detection> dets;
 		std::vector<FEATURE> fts;
@@ -82,7 +82,7 @@ bool NT::Init(){
 		srand((unsigned)time(NULL));
 		int width = frame.cols;
 		int height = frame.rows;
-		for(int i = 0; i < 30; i++){
+		//for(int i = 0; i < 30; i++){
 					int x = rand()%width;
 					int y = rand()%height;
 					int w = 100;
@@ -96,7 +96,7 @@ bool NT::Init(){
 					}
 					cv::Rect rc(x, y, w, h);	
 					rcs.push_back(rc);
-		}
+		//}
 		ExtractFeature(frame, rcs, fts);
 #endif
 	NearestNeighborDistanceMetric::Instance()->Init(0.2, 100);

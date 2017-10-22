@@ -104,7 +104,6 @@ void CB(cv::Mat &frame, int num){
 	if (_vw == NULL) {
 		_vw = new cv::VideoWriter("out.avi", CV_FOURCC('M', 'J', 'P', 'G'), 25.0, cv::Size(frame.cols, frame.rows));
 	}
-	int64_t tm0 = gtm();
 	if (_rcMap.empty()) {
 		ReadRcFileTotal(_rcFile);
 	}
@@ -114,11 +113,14 @@ void CB(cv::Mat &frame, int num){
 		rcs = it->second;
 	}
 	std::vector<cv::Rect> outRcs;
+	
+	int64_t tm0 = gtm();
 	std::map<int, DSResult> map = _tt->UpdateAndGet(frame, rcs, num, outRcs);
+	int64_t tm1 = gtm();
 	Mat mm = frame.clone();
 	bool detect = (!rcs.empty());
 	DrawData(mm, frame, map, outRcs, detect);
-	printf("finish %d frame\n", num);
+	printf("finish %d frame, updatecasttime:%ld\n", num, tm1-tm0);
 	//(*_vw) << frame;
 	if(_isShow){
 		std::string disp = "frame";
@@ -126,7 +128,7 @@ void CB(cv::Mat &frame, int num){
 		cv::resize(frame, frame, cv::Size(frame.cols/2, frame.rows/2));
 		cv::imshow("mm", mm);
 		cv::imshow(disp, frame);
-		cv::waitKey();
+		cv::waitKey(1);
 	}
 }
 
@@ -155,8 +157,8 @@ int main(int argc, char **argv){
 
 	//_imgDir = "e:/code/deep_sort-master/MOT16/tt/xyz/img1/";
 	//_rcFile = "e:/code/deep_sort-master/MOT16/tt/xyz/det/det.txt";
-	//_imgDir = "/home/xyz/code1/xyz/img1/";
-	//_rcFile = "/home/xyz/code1/xyz/det/102_mod5.txt";
+	//_imgDir = "/home/xyz/code1/xyz2/img1/";
+	//_rcFile = "/home/xyz/code1/xyz2/det/det.txt";
 	//_rcFile = "/home/xyz/code/test/pp/FaceNumGetter/out/102.txt";
 
 
