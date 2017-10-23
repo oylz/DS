@@ -40,6 +40,7 @@
 **/
 
 //float* fhog(float* I,int height,int width,int channel,int *h,int *w,int *d,int binSize = 4,int nOrients = 9,float clip=0.2f,bool crop = false);
+float *HOGXYZ(const cv::Mat &input, int &len);
 cv::Mat fhog(const cv::Mat& input, int binSize = 4,int nOrients = 9,float clip=0.2f,bool crop = false);
 
 void change_format(float *des,float *source,int height,int width,int channel);

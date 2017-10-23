@@ -28,7 +28,7 @@ rm DS -rf
 
 function BOPENMP(){
 	LLIBS="-lopencv_corexyz -lopencv_imgprocxyz  -lopencv_highguixyz -lFeatureGetter -lboost_system -lglog -ltcmalloc"
-	g++ --std=c++14 -O3 -fopenmp -o DS $IINCLUDE $LLIBPATH  deepsort/munkres/munkres.cpp deepsort/munkres/adapters/adapter.cpp deepsort/munkres/adapters/boostmatrixadapter.cpp  NT.cpp fdsst/fdssttracker.cpp fdsst/fhog.cpp Main.cpp $LLIBS
+	g++ --std=c++14 -O3 -fopenmp -DUDL -o DS $IINCLUDE $LLIBPATH  deepsort/munkres/munkres.cpp deepsort/munkres/adapters/adapter.cpp deepsort/munkres/adapters/boostmatrixadapter.cpp  NT.cpp fdsst/fdssttracker.cpp fdsst/fhog.cpp Main.cpp $LLIBS
 }
 
 
@@ -38,7 +38,13 @@ function BTBB(){
 }
 
 
-BOPENMP
+function BOPENMPHOG(){
+	LLIBS="-lopencv_corexyz -lopencv_imgprocxyz  -lopencv_highguixyz  -lboost_system -lglog -ltcmalloc"
+	g++ --std=c++14 -O3 -fopenmp -o DS $IINCLUDE $LLIBPATH  deepsort/munkres/munkres.cpp deepsort/munkres/adapters/adapter.cpp deepsort/munkres/adapters/boostmatrixadapter.cpp  NT.cpp fdsst/fdssttracker.cpp fdsst/fhog.cpp Main.cpp $LLIBS
+}
+
+BOPENMPHOG
+
 
 
 

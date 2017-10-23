@@ -38,7 +38,7 @@ std::map<int, XINPUT> _xinputs;
 int _iw = -1;
 int _ih = -1;
 int _outLayer = -1;
-static const std::string _outLayerName = "resx1_conv3";
+static const std::string _outLayerName = "fc1000";
 
 static const std::string rootp = "/home/xyz/code1/ShuffleNet-Model/";
 static const std::string modelp = rootp + "incode.prototxt";//"ssd_shufflenet_21_test.prototxt";

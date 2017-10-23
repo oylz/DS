@@ -503,7 +503,7 @@ float* fhog(float* I,int height,int width,int channel,int *h,int *w,int *d,int b
     *h = height/binSize;
     *w = width/binSize;
     *d = nOrients*3+5;
-
+	printf("fhog.cpp506:(binSize:%d, h:%d, w:%d, d:%d)\n", binSize, *h, *w, *d);
 
     float* H = new float[(*h)*(*w)*(*d)];
     memset(H,0.0f,(*h)*(*w)*(*d)*sizeof(float));
@@ -527,7 +527,47 @@ void change_format(float *des,float *source,int height,int width,int channel){
             for(int k = 0;k < channel;k ++)
                 des[k*height*width+j*height+i] = source[i*width*channel+j*channel+k];
 }
+float* HOGXYZ(const cv::Mat& input, int &len){
+	int binSize = 16;
+	int nOrients = 9;
+	float clip = 0.2f;
+	bool crop = false;
+    int HEIGHT = input.rows;
+    int WIDTH = input.cols;
+    int DEPTH = input.channels();
 
+    CV_Assert(DEPTH == 1);
+
+    float *II = new float[HEIGHT*WIDTH*DEPTH];
+    int count = 0;
+    for (size_t i = 0; i < HEIGHT; i++) {
+        for (size_t j = 0; j < WIDTH; j++) {
+            // Vec3b vec = image.at<Vec3b>(i,j);
+            for (size_t k = 0; k < DEPTH; k++) {
+                II[count] = input.at<uchar>(i, j) / 255.;
+                // cout<<II[count]<<endl;
+                count++;
+            }
+        }
+    }
+
+    float *I = new float[HEIGHT*WIDTH*DEPTH];
+    change_format(I,II,HEIGHT,WIDTH,DEPTH);
+    int h,w,d;
+    float* HH = fhog(I,HEIGHT,WIDTH,DEPTH,&h,&w,&d,binSize,nOrients,clip,crop);
+    if(HH == NULL){
+		delete []I;
+		delete []II;
+        return NULL; 
+    }
+	printf("fhog563:(WIDTH:%d, HEIGHT:%d, DEPTH:%d, w:%d, h:%d, d:%d)\n", 
+		WIDTH, HEIGHT, DEPTH, w, h, d);
+    float* H = new float[h*w*d];
+    change_format(H,HH,d,w,h);
+    delete []II;delete []I;delete []HH;
+	len = w*h*d;
+    return H;
+}
 cv::Mat fhog(const cv::Mat& input, int binSize, int nOrients, float clip, bool crop){
     int HEIGHT = input.rows;
     int WIDTH = input.cols;
@@ -558,9 +598,10 @@ cv::Mat fhog(const cv::Mat& input, int binSize, int nOrients, float clip, bool c
         cv::Mat re;
         return re; 
     }
+	printf("fhog563:(WIDTH:%d, HEIGHT:%d, DEPTH:%d, w:%d, h:%d, d:%d)\n", 
+		WIDTH, HEIGHT, DEPTH, w, h, d);
     float* H = new float[h*w*d];
     change_format(H,HH,d,w,h);
-
     cv::Mat fhog_feature(h,w,CV_32FC(32),H);
 	cv::Mat out = fhog_feature.clone();
     delete []II;delete []I;delete []HH;

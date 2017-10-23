@@ -1,18 +1,47 @@
 #include "NT.h"
-#include "deepsort/FeatureGetter/FeatureGetter.h"
+
+//#define UDL
+#ifdef UDL
+	//#define UBC
+	#include "deepsort/FeatureGetter/FeatureGetter.h"
+#endif
+
 #include "./deepsort/tracker.h"
 #include "StrCommon.h"
 #include "fdsst/fdssttracker.hpp"
+#include "fdsst/fhog.h"
 #include <boost/thread/mutex.hpp>
 
 
 NearestNeighborDistanceMetric *NearestNeighborDistanceMetric::self_ = NULL;
 KF *KF::self_ = NULL;
 
-//#define UBC
+#define UHOG
 
 
-
+void ExtractFeatureHog(const cv::Mat &in, 
+	const std::vector<cv::Rect> &rcsin,
+	std::vector<FEATURE> &fts){
+	cv::Mat frame;
+	cvtColor(in, frame, cv::COLOR_RGB2GRAY);
+	for(int i = 0; i < rcsin.size(); i++){
+		Mat nnn = frame(rcsin[i]);
+		resize(nnn, nnn, Size(32, 32));
+		int len = 0;
+		float *hog = HOGXYZ(nnn, len);
+		if(hog==NULL || len!=128){
+			printf("hog(%d) is null or len(%d)!=128,exit!\n", hog==NULL, len);
+			exit(0);
+		}
+		FEATURE ft;
+		for(int j = 0; j < len; j++){
+			ft(j) = hog[j];
+		}
+		delete hog;
+		fts.push_back(ft);
+	}
+}
+#ifdef UDL
 void ExtractFeature(const cv::Mat &in, 
 	const std::vector<cv::Rect> &rcsin,
 	std::vector<FEATURE> &fts) {
@@ -62,6 +91,7 @@ void ExtractFeature(const cv::Mat &in,
 		fts.push_back(newfts[i]);
 	}
 }
+#endif
 
 NT::NT(){
 	tt_ = TTrackerP(new TTracker(0.7, 30, 1));
@@ -70,11 +100,24 @@ NT::NT(){
 NT::~NT(){
 }
 bool NT::Init(){
+#ifdef UDL
 	if(!FeatureGetter::Instance()->Init()){
 		return false;
 	}
+#endif
+	if(0){// just a test
+		Mat frame = cv::imread("/home/xyz/code1/xyz/img1/000001.jpg");
+		Mat nnn;
+       		cvtColor(frame, nnn, cv::COLOR_RGB2GRAY);
+		resize(nnn, nnn, Size(32, 32));
+		Mat a = fhog(nnn, 4, 9, 0.2f, false);
+		std::cout << "a:cols:" << a.cols << "a:rows:" << a.rows << "\njust a test, exit\n";
+		exit(0);
+	}
+
 	KF::Instance()->Init();
-#ifdef UBC
+#ifdef UDL
+	#ifdef UBC
 		Mat frame = cv::imread("/home/xyz/code1/xyz/img1/000001.jpg");
 		std::vector<Detection> dets;
 		std::vector<FEATURE> fts;
@@ -98,6 +141,7 @@ bool NT::Init(){
 					rcs.push_back(rc);
 		//}
 		ExtractFeature(frame, rcs, fts);
+	#endif
 #endif
 	NearestNeighborDistanceMetric::Instance()->Init(0.2, 100);
 
@@ -108,7 +152,11 @@ NewAndDelete NT::UpdateDS(const cv::Mat &frame, const std::vector<cv::Rect> &rcs
 		std::vector<Detection> dets;
 		std::vector<FEATURE> fts;
 		if(rcs.size() > 0){
+#ifdef UHOG
+			ExtractFeatureHog(frame, rcs, fts);
+#else
 			ExtractFeature(frame, rcs, fts);
+#endif
 		}
 		int64_t tm2 = gtm();
 		for (int i = 0; i < rcs.size(); i++){	

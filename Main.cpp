@@ -157,13 +157,13 @@ int main(int argc, char **argv){
 
 	//_imgDir = "e:/code/deep_sort-master/MOT16/tt/xyz/img1/";
 	//_rcFile = "e:/code/deep_sort-master/MOT16/tt/xyz/det/det.txt";
-	//_imgDir = "/home/xyz/code1/xyz2/img1/";
-	//_rcFile = "/home/xyz/code1/xyz2/det/det.txt";
+	_imgDir = "/home/xyz/code1/xyz/img1/";
+	_rcFile = "/home/xyz/code1/xyz/det/det.txt";
 	//_rcFile = "/home/xyz/code/test/pp/FaceNumGetter/out/102.txt";
 
 
-	_imgDir = "/home/xyz/code1/GEP/FrameBuffer/imglog/img1/";
-	_rcFile = "/home/xyz/code1/GEP/FrameBuffer/imglog/det/det.txt";
+	//_imgDir = "/home/xyz/code1/GEP/FrameBuffer/imglog/img1/";
+	//_rcFile = "/home/xyz/code1/GEP/FrameBuffer/imglog/det/det.txt";
 	_imgCount = 650;// 2001;// 750;// 680;
 	Go();
 	return 0;
