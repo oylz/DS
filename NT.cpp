@@ -260,6 +260,7 @@ std::map<int, DSResult> NT::UpdateAndGet(const cv::Mat &frame,
 	Mat ffMat;
         cvtColor(frame, ffMat, cv::COLOR_RGB2GRAY);
 	resize(ffMat, ffMat, Size(ffMat.cols*scale_, ffMat.rows*scale_));
+	std::cout << "NT::UpdateAndGet1\n";
 	//}
 	if(!rcsin.empty()){
 		fdssts_.clear();
@@ -267,6 +268,7 @@ std::map<int, DSResult> NT::UpdateAndGet(const cv::Mat &frame,
 	else{
 		UpdateFDSST(ffMat, rcs);
 	}
+	std::cout << "NT::UpdateAndGet1.5\n";
 	outRcs = rcs;
 	NewAndDelete nad = UpdateDS(frame, rcs, num, oriPos);
 
@@ -275,6 +277,7 @@ std::map<int, DSResult> NT::UpdateAndGet(const cv::Mat &frame,
 	std::vector<KalmanTracker> &kalmanTrackers =
 			tt_->kalmanTrackers_;
 
+	std::cout << "NT::UpdateAndGet2\n";
 	std::vector<std::pair<int, cv::Rect> > idrcs;	
     	for (const auto& track : kalmanTrackers){
 		int id = (int)track->track_id;
@@ -308,6 +311,7 @@ std::map<int, DSResult> NT::UpdateAndGet(const cv::Mat &frame,
 
 		map.insert(std::make_pair(id, tr));
     	}
+	std::cout << "NT::UpdateAndGet3\n";
 	FFS ffs;
 	#pragma omp parallel for
 	for(int i = 0; i < idrcs.size(); i++){
@@ -321,6 +325,7 @@ std::map<int, DSResult> NT::UpdateAndGet(const cv::Mat &frame,
 		fdsst->init(ToScaleRect(rc), ffMat);
 		ffs.Push(id, fdsst);
 	}
+	std::cout << "NT::UpdateAndGet4\n";
 	std::vector<std::pair<int, FDSSTTrackerP> > pps;
 	ffs.Get(pps);
 	for(int i = 0; i < pps.size(); i++){

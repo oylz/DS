@@ -8,9 +8,10 @@
 
 #ifdef USETBB
 #include <tbb.h>
-#include <map>
 #endif
+#include <map>
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 
 
 static int64_t nn_gtm() {
@@ -126,6 +127,21 @@ public:
 #endif
         }
     }
+    struct DDS{
+    public:
+	void Push(int pos, const Eigen::VectorXf &dd){
+		boost::mutex::scoped_lock lock(mutex_);
+		dds_.push_back(
+			std::make_pair(pos, dd)
+		);
+	}
+	void Get(std::vector<std::pair<int, Eigen::VectorXf> > &dds){
+		dds = dds_;
+	}
+    private:
+	std::vector<std::pair<int, Eigen::VectorXf> > dds_;
+	boost::mutex mutex_;
+    };
 
     DYNAMICM distance(const FEATURESS &features, const IDS &ids){
 #ifdef USETBB
@@ -154,7 +170,7 @@ public:
 	static DYNAMICM cost_matrix;
 	cost_matrix = DYNAMICM(ids.size(), features.rows());
 	int64_t dtm0 = nn_gtm();
-
+	DDS dds;
 	#pragma omp parallel for
         for(int i = 0; i < ids.size(); i++){
             int iid = ids[i];
@@ -164,10 +180,18 @@ public:
 				fts.row(k) = ftsvec[k];
 			}
 			int64_t dtm1 = nn_gtm();
-			cost_matrix.row(i) = _nn_cosine_distance(fts, features);
+			//cost_matrix.row(i) = _nn_cosine_distance(fts, features);
+			Eigen::VectorXf dd = _nn_cosine_distance(fts, features);
+			dds.Push(i, dd);
 			int64_t dtm2 = nn_gtm();
 			std::cout << "distance(" << iid<< ")----dtm2-dtm1:" << (dtm2-dtm1) << "\n";
         }
+	std::vector<std::pair<int, Eigen::VectorXf>> vec;
+	dds.Get(vec);
+	for(int i = 0; i < vec.size(); i++){
+		std::pair<int, Eigen::VectorXf> pa = vec[i];
+		cost_matrix.row(pa.first) =  pa.second;
+	} 
 #endif
 		int64_t dtm4 = nn_gtm();
 		std::cout << "distance----dtm4-dtm0:" << (dtm4-dtm0) << "\n";

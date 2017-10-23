@@ -40,7 +40,7 @@ function BTBB(){
 
 function BOPENMPHOG(){
 	LLIBS="-lopencv_corexyz -lopencv_imgprocxyz  -lopencv_highguixyz  -lboost_system -lglog"
-	g++ --std=c++14 -ggdb -fPIC -shared -O3 -fopenmp -o libDS.so $IINCLUDE $LLIBPATH  deepsort/munkres/munkres.cpp deepsort/munkres/adapters/adapter.cpp deepsort/munkres/adapters/boostmatrixadapter.cpp  NT.cpp fdsst/fdssttracker.cpp fdsst/fhog.cpp Main.cpp $LLIBS
+	g++ --std=c++14  -fPIC -shared -O3 -fopenmp -o libDS.so $IINCLUDE $LLIBPATH  deepsort/munkres/munkres.cpp deepsort/munkres/adapters/adapter.cpp deepsort/munkres/adapters/boostmatrixadapter.cpp  NT.cpp fdsst/fdssttracker.cpp fdsst/fhog.cpp Main.cpp $LLIBS
 }
 
 BOPENMPHOG
