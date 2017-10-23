@@ -36,20 +36,6 @@
 #endif
 
 #include "arm_neon.h"
-#ifdef WIN32
-//{
-#ifndef _CRTDBG_MAP_ALLOC
-#define _CRTDBG_MAP_ALLOC
-#endif
-#include <stdlib.h>  
-#include <crtdbg.h> 
-#ifdef _DEBUG  
-	#ifndef new
-	#define new   new(_NORMAL_BLOCK, __FILE__, __LINE__)  
-	#endif
-#endif
-//}
-#endif
 /*******************************************************/
 /* MACRO for shuffle parameter for _mm_shuffle_ps().   */
 /* Argument fp3 is a digit[0123] that represents the fp*/

@@ -5,36 +5,24 @@ using namespace std;
 
 #include "fhog.h"
 #undef MIN
-#ifdef WIN32
-//{
-#ifndef _CRTDBG_MAP_ALLOC
-#define _CRTDBG_MAP_ALLOC
-#endif
-#include <stdlib.h>  
-#include <crtdbg.h> 
-#ifdef _DEBUG  
-	#ifndef new
-	#define new   new(_NORMAL_BLOCK, __FILE__, __LINE__)  
-	#endif
-#endif
-//}
-#endif
 #define GLOG_NO_ABBREVIATED_SEVERITIES
 #include <glog/logging.h>
 // platform independent aligned memory allocation (see also alFree)
-void* alMalloc( size_t size, int alignment ) {
-  const size_t pSize = sizeof(void*), a = alignment-1;
-  void *raw = wrMalloc(size + a + pSize);
-  void *aligned = (void*) (((size_t) raw + pSize + a) & ~a);
-  *(void**) ((size_t) aligned-pSize) = raw;
+void* alMalloc( size_t size, int alignment, unsigned char **out) {
+  const size_t pSize = sizeof(void*);
+  const size_t aaa = alignment-1;
+  unsigned char *tmp = new unsigned char[size+aaa+pSize];
+  *out = tmp;
+  void *raw = (void*)tmp;
+  void *aligned = (void*) (
+				((size_t)raw + pSize + aaa) & 
+				~aaa
+			  );
+
+  *(void**)((size_t)aligned - pSize) = raw;
   return aligned;
 }
 
-// platform independent alignned memory de-allocation (see also alMalloc)
-void alFree(void* aligned) {
-  void* raw = *(void**)((char*)aligned-sizeof(void*));
-  wrFree(raw);
-}
 
 /*******************************************************************************
 * Piotr's Computer Vision Matlab Toolbox      Version 3.30
@@ -106,9 +94,12 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
   // allocate memory for storing one column of output (padded so h4%4==0)
   h4=(h%4==0) ? h : h-(h%4)+4; s=d*h4*sizeof(float);
   //LOG(INFO) << "gradMag----d:" << d << ", h4:" << h4 << ", s:" << s;
-  M2=(float*) alMalloc(s,16); _M2=(__m128*) M2;
-  Gx=(float*) alMalloc(s,16); _Gx=(__m128*) Gx;
-  Gy=(float*) alMalloc(s,16); _Gy=(__m128*) Gy;
+  unsigned char *d1 = NULL;
+  unsigned char *d2 = NULL;
+  unsigned char *d3 = NULL;
+  M2=(float*) alMalloc(s,16, &d1); _M2=(__m128*) M2;
+  Gx=(float*) alMalloc(s,16, &d2); _Gx=(__m128*) Gx;
+  Gy=(float*) alMalloc(s,16, &d3); _Gy=(__m128*) Gy;
   // compute gradient magnitude and orientation for each column
   for( x=0; x<w; x++ ) {
     // compute gradients (Gx, Gy) with maximum squared magnitude (M2)
@@ -148,9 +139,9 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
       for( ; y<h; y++ ) O[y+x*h]+=(Gy[y]<0)*PI;
     }
   }
-  alFree((void *)Gx); 
-  alFree((void *)Gy);
-  alFree((void *)M2);
+  delete []d1;
+  delete []d2;
+  delete []d3;
 }
 
 // normalize gradient magnitude at each location (uses sse)
@@ -205,8 +196,15 @@ void gradHist( float *M, float *O, float *H, int h, int w,
   const int hb=h/bin, wb=w/bin, h0=hb*bin, w0=wb*bin, nb=wb*hb;
   const float s=(float)bin, sInv=1/s, sInv2=1/s/s;
   float *H0, *H1, *M0, *M1; int x, y; int *O0, *O1; float xb, init;
-  O0=(int*)alMalloc(h*sizeof(int),16); M0=(float*) alMalloc(h*sizeof(float),16);
-  O1=(int*)alMalloc(h*sizeof(int),16); M1=(float*) alMalloc(h*sizeof(float),16);
+  unsigned char *d1 = NULL;
+  unsigned char *d2 = NULL;
+  unsigned char *d3 = NULL;
+  unsigned char *d4 = NULL;
+
+  O0=(int*)alMalloc(h*sizeof(int),16, &d1); 
+  M0=(float*) alMalloc(h*sizeof(float),16, &d2);
+  O1=(int*)alMalloc(h*sizeof(int),16, &d3); 
+  M1=(float*) alMalloc(h*sizeof(float),16, &d4);
   // main loop
   for( x=0; x<w0; x++ ) {
     // compute target orientation bins for entire column - very fast
@@ -274,10 +272,10 @@ void gradHist( float *M, float *O, float *H, int h, int w,
       #undef GH
     }
   }
-  alFree((void *)O0);
-  alFree((void *)O1);
-  alFree((void *)M0);
-  alFree((void *)M1);
+  delete []d1;
+  delete []d2;
+  delete []d3;
+  delete []d4;
   // normalize boundary bins which only get 7/8 of weight of interior bins
   if( softBin%2!=0 ) for( int o=0; o<nOrients; o++ ) {
     x=0; for( y=0; y<hb; y++ ) H[o*nb+x*hb+y]*=8.f/7.f;
@@ -293,7 +291,8 @@ void gradHist( float *M, float *O, float *H, int h, int w,
 float* hogNormMatrix( float *H, int nOrients, int hb, int wb, int bin ) {
   float *N, *N1, *n; int o, x, y, dx, dy, hb1=hb+1, wb1=wb+1;
   float eps = 1e-4f/4/bin/bin/bin/bin; // precise backward equality
-  N = (float*) wrCalloc(hb1*wb1,sizeof(float)); N1=N+hb1+1;
+  N = new float[hb1*wb1];
+  N1=N+hb1+1;
   for( o=0; o<nOrients; o++ ) for( x=0; x<wb; x++ ) for( y=0; y<hb; y++ )
     N1[x*hb1+y] += H[o*wb*hb+x*hb+y]*H[o*wb*hb+x*hb+y];
   for( x=0; x<wb-1; x++ ) for( y=0; y<hb-1; y++ ) {
@@ -342,14 +341,14 @@ void hog( float *M, float *O, float *H, int h, int w, int binSize,
 {
   float *N, *R; const int hb=h/binSize, wb=w/binSize, nb=hb*wb;
   // compute unnormalized gradient histograms
-  R = (float*) wrCalloc(wb*hb*nOrients,sizeof(float));
+  R = new float[wb*hb*nOrients];
   gradHist( M, O, R, h, w, binSize, nOrients, softBin, full );
   // compute block normalization values
   N = hogNormMatrix( R, nOrients, hb, wb, binSize );
   // perform four normalizations per spatial block
   hogChannels( H, R, N, hb, wb, nOrients, clip, 0 );
-  wrFree((void*)N); 
-  wrFree((void*)R);
+  delete []N;
+  delete []R;
 }
 
 // compute FHOG features
@@ -363,10 +362,10 @@ bool fhog( float *M, float *O, float *H, int h, int w, int binSize,
   if(sz <= 0){
      return false;
   }
-  R1 = (float*) wrCalloc(wb*hb*nOrients*2,sizeof(float));
+  R1 = new float[wb*hb*nOrients*2];
   gradHist( M, O, R1, h, w, binSize, nOrients*2, softBin, true );
   // compute unnormalized contrast insensitive histograms
-  R2 = (float*) wrCalloc(wb*hb*nOrients,sizeof(float));
+  R2 = new float[wb*hb*nOrients];
   for( o=0; o<nOrients; o++ ) for( x=0; x<nb; x++ )
     R2[o*nb+x] = R1[o*nb+x]+R1[(o+nOrients)*nb+x];
   // compute block normalization values
@@ -375,9 +374,9 @@ bool fhog( float *M, float *O, float *H, int h, int w, int binSize,
   hogChannels( H+nbo*0, R1, N, hb, wb, nOrients*2, clip, 1 );
   hogChannels( H+nbo*2, R2, N, hb, wb, nOrients*1, clip, 1 );
   hogChannels( H+nbo*3, R1, N, hb, wb, nOrients*2, clip, 2 );
-  wrFree((void*)N); 
-  wrFree((void*)R1);
-  wrFree((void*)R2);
+  delete []N;
+  delete []R1;
+  delete []R2;
   return true;
 }
 
