@@ -38,7 +38,7 @@ static int64_t fgtm() {
 }
 
 
-FeatureGetter *FeatureGetter::self_ = NULL;
+boost::shared_ptr<FeatureGetter> FeatureGetter::self_;
 
 typedef unsigned char uint8;
 

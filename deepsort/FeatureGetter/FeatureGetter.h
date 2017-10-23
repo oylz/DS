@@ -1,7 +1,7 @@
 #ifndef _FEATUREGETTERH_
 #define _FEATUREGETTERH_
 
-
+#include <boost/shared_ptr.hpp>
 #include <opencv2/opencv.hpp>
 #include <Eigen>
 typedef Eigen::Matrix<float, 1, 128, Eigen::RowMajor> FFEATURE;
@@ -12,11 +12,11 @@ typedef Eigen::Matrix<float, 1, 128, Eigen::RowMajor> FFEATURE;
 
 class FeatureGetter {
 private:
-	static FeatureGetter *self_;
+	static boost::shared_ptr<FeatureGetter> self_;
 public:
-	static FeatureGetter *Instance() {
-		if (self_ == NULL) {
-			self_ = new FeatureGetter();
+	static boost::shared_ptr<FeatureGetter> Instance() {
+		if (self_.get() == NULL) {
+			self_.reset(new FeatureGetter());
 		}
 		return self_;
 	}

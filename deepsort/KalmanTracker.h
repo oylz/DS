@@ -2,6 +2,7 @@
 #define _KALMANTRACKERH_
 #include "FeatureGetter/FeatureGetter.h"
 #include "kalman_filter.h"
+#include <boost/shared_ptr.hpp>
 
 enum TrackState{
     TS_NONE = 0,
@@ -9,8 +10,10 @@ enum TrackState{
     Confirmed,
     Deleted
 };
+class KalmanTrackerN;
+typedef boost::shared_ptr<KalmanTrackerN> KalmanTracker;
 
-class KalmanTracker{
+class KalmanTrackerN{
 public:
 	int time_since_update_ = 0;
 	MEAN mean_;
@@ -26,7 +29,7 @@ private:
 	int _max_age_;
 
 public:
-    KalmanTracker(const MEAN &mean, 
+    KalmanTrackerN(const MEAN &mean, 
 		const VAR &covariance, 
 		int tid, 
 		int n_init, 

@@ -74,7 +74,7 @@ private:
     }
 
 public:
-    static DYNAMICM getCostMatrixByIOU(const std::vector<KalmanTracker*> &tracks, 
+    static DYNAMICM getCostMatrixByIOU(const std::vector<KalmanTracker> &tracks, 
                     const std::vector<Detection> &detections, 
                     IDS *track_indicesi=NULL,
                     IDS *detection_indicesi=NULL){

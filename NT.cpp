@@ -13,8 +13,8 @@
 #include <boost/thread/mutex.hpp>
 
 
-NearestNeighborDistanceMetric *NearestNeighborDistanceMetric::self_ = NULL;
-KF *KF::self_ = NULL;
+boost::shared_ptr<NearestNeighborDistanceMetric> NearestNeighborDistanceMetric::self_;
+boost::shared_ptr<KF> KF::self_;
 
 #define UHOG
 
@@ -272,7 +272,7 @@ std::map<int, DSResult> NT::UpdateAndGet(const cv::Mat &frame,
 
 
 	std::map<int, DSResult> map;
-	std::vector<KalmanTracker*> &kalmanTrackers =
+	std::vector<KalmanTracker> &kalmanTrackers =
 			tt_->kalmanTrackers_;
 
 	std::vector<std::pair<int, cv::Rect> > idrcs;	

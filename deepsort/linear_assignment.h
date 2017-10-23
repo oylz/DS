@@ -22,7 +22,7 @@ struct RR {
 	IDS unmatched_tracks;
 };
 
-typedef DYNAMICM (*GetCostMarixFun)(const std::vector<KalmanTracker*> &tracks,
+typedef DYNAMICM (*GetCostMarixFun)(const std::vector<KalmanTracker> &tracks,
 	const std::vector<Detection> &detections,
 	IDS *track_indices,
 	IDS *detection_indices);
@@ -43,7 +43,7 @@ class linear_assignment{
 public:
     static RR min_cost_matching(
             const GetCostMarixFun &getCostMarixFun, float max_distance,
-        const std::vector<KalmanTracker*> &tracks, 
+        const std::vector<KalmanTracker> &tracks, 
         const std::vector<Detection> &detections, 
         IDS *track_indicesi=NULL,
         IDS *detection_indicesi=NULL){
@@ -158,7 +158,7 @@ public:
     static RR matching_cascade(
         const GetCostMarixFun &getCostMarixFun, float max_distance,
         int cascade_depth,
-        const std::vector<KalmanTracker*> &tracks,
+        const std::vector<KalmanTracker> &tracks,
         const std::vector<Detection> &detections,
         IDS *track_indicesi = NULL,
         IDS *detection_indicesi = NULL){
@@ -227,7 +227,7 @@ public:
     static DYNAMICM gate_cost_matrix(
         const KF &kalmanFilter,
         DYNAMICM &cost_matrix, 
-        const std::vector<KalmanTracker*> &tracks,
+        const std::vector<KalmanTracker> &tracks,
         const std::vector<Detection> &detections,
         IDS track_indices,
         IDS detection_indices,
@@ -243,7 +243,7 @@ public:
         }
         for (int row = 0; row < track_indices.size(); row++) {
             int track_idx = track_indices[row];
-            KalmanTracker *track = tracks[track_idx];
+            KalmanTracker track = tracks[track_idx];
 			// gating_distance is a vector
 			Eigen::Matrix<float, 1, -1> gating_distance = kalmanFilter.gating_distance(
                 track->mean_, track->covariance_, measurements, only_position);

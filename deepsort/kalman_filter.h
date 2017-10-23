@@ -1,21 +1,21 @@
 #ifndef PYKF
 #ifndef _KKALMANFILTERH_
 #define _KKALMANFILTERH_
-
+#include <boost/shared_ptr.hpp>
 
 typedef Eigen::Matrix<float, 4, 8, Eigen::RowMajor> UPM;
 
 class KF{
 private:
-    static KF *self_;
+    static boost::shared_ptr<KF> self_;
     VAR _motion_mat_;
     UPM _update_mat_;
     double _std_weight_position_;
     double _std_weight_velocity_;
 public:
-	static KF *Instance() {
-		if (self_ == NULL) {
-			self_ = new KF();
+	static boost::shared_ptr<KF> Instance() {
+		if (self_.get() == NULL) {
+			self_.reset(new KF());
 		}
 		return self_;
 	}

@@ -9,7 +9,7 @@
 #include "FeatureGetter/FeatureGetter.h"
 #include "../NTN.h"
 
-DYNAMICM getCostMatrixByNND(const std::vector<KalmanTracker*> &kalmanTrackers,
+DYNAMICM getCostMatrixByNND(const std::vector<KalmanTracker> &kalmanTrackers,
 	const std::vector<Detection> &dets,
 	IDS *track_indices,
 	IDS *detection_indices);
@@ -17,7 +17,7 @@ class TTracker *p;
 
 class TTracker{
 public:
-	std::vector<KalmanTracker*> kalmanTrackers_;
+	std::vector<KalmanTracker> kalmanTrackers_;
 private:
         float max_iou_distance_ = 0;
         int max_age_ = 0;
@@ -38,7 +38,7 @@ public:
 	NewAndDelete re;
 
 	int64_t uptm1 = line_gtm();
-        for(KalmanTracker *kalmanTrack : kalmanTrackers_){
+        for(KalmanTracker kalmanTrack : kalmanTrackers_){
             kalmanTrack->predict(*KF::Instance());
         }
 
@@ -70,15 +70,15 @@ public:
         
 	int64_t uptm4 = line_gtm();
         
-		std::vector<KalmanTracker*>::iterator it;
+		std::vector<KalmanTracker>::iterator it;
 		while (1) {
 			bool cn = false;
 			for (it = kalmanTrackers_.begin(); it != kalmanTrackers_.end(); ++it) {
-				KalmanTracker *p = *it;
+				KalmanTracker p = *it;
 				if (p->is_deleted()) {
 					re.deletes_.push_back(p->track_id);
 					kalmanTrackers_.erase(it);
-					delete p;
+					//delete p;
 					cn = true;
 					break;
 				}
@@ -91,7 +91,7 @@ public:
 
         //# Update distance nearestNeighborDistanceMetric.
         IDS active_ids;
-        for(KalmanTracker *t : kalmanTrackers_){
+        for(KalmanTracker t : kalmanTrackers_){
             if(t->is_confirmed()){
                 active_ids.push_back(t->track_id);
             }
@@ -100,7 +100,7 @@ public:
 	int64_t uptm5 = line_gtm();
 		int featureCount = 0;
         IDS ids;
-        for(KalmanTracker *t : kalmanTrackers_){
+        for(KalmanTracker t : kalmanTrackers_){
             if(!t->is_confirmed()){
                 continue;
             }
@@ -114,7 +114,7 @@ public:
         }
 		FEATURESS features(featureCount, 128);
 		int pos = 0;
-		for (KalmanTracker *t : kalmanTrackers_) {
+		for (KalmanTracker t : kalmanTrackers_) {
 			if (!t->is_confirmed()) {
 				continue;
 			}
@@ -145,7 +145,7 @@ private:
         IDS confirmed_trackIds;
         IDS unconfirmed_trackIds;
         for(int i = 0; i < kalmanTrackers_.size(); i++){
-            KalmanTracker *t = kalmanTrackers_[i]; 
+            KalmanTracker t = kalmanTrackers_[i]; 
             if(t->is_confirmed()){
                 confirmed_trackIds.push_back(i);
             }
@@ -221,15 +221,18 @@ private:
 	int id = _next_id_;
         std::pair<MEAN, VAR>  pa = 
                     KF::Instance()->initiate(detection.to_xyah());
-        kalmanTrackers_.push_back(new KalmanTracker(
+	KalmanTracker newt(new KalmanTrackerN(
             pa.first, pa.second, _next_id_, n_init_, max_age_,
             detection.feature_, true, detection.oriPos_));
+        kalmanTrackers_.push_back(newt);/*new KalmanTracker(
+            pa.first, pa.second, _next_id_, n_init_, max_age_,
+            detection.feature_, true, detection.oriPos_));*/
         _next_id_ += 1;
 	return id;
     }
 };
 
-DYNAMICM getCostMatrixByNND(const std::vector<KalmanTracker*> &kalmanTrackers,
+DYNAMICM getCostMatrixByNND(const std::vector<KalmanTracker> &kalmanTrackers,
 	const std::vector<Detection> &dets,
 	IDS *track_indicesi,
 	IDS *detection_indicesi) {

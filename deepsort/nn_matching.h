@@ -10,6 +10,7 @@
 #include <tbb.h>
 #include <map>
 #endif
+#include <boost/shared_ptr.hpp>
 
 
 static int64_t nn_gtm() {
@@ -66,7 +67,7 @@ Eigen::VectorXf _nn_cosine_distance(const FEATURESS &x,
 
 class NearestNeighborDistanceMetric{
 private:
-    static NearestNeighborDistanceMetric *self_;
+    static boost::shared_ptr<NearestNeighborDistanceMetric> self_;
     float matching_threshold_ = 0;
     int budget_ = 0;
     std::map<int, std::vector<FEATURE> > samples_;
@@ -74,9 +75,9 @@ public:
 	float matching_threshold() {
 		return matching_threshold_;
 	}
-    static NearestNeighborDistanceMetric *Instance(){
-        if(self_ == NULL){
-            self_ = new NearestNeighborDistanceMetric();
+    static boost::shared_ptr<NearestNeighborDistanceMetric> Instance(){
+        if(self_.get() == NULL){
+            self_.reset(new NearestNeighborDistanceMetric());
         }
         return self_;
     }
