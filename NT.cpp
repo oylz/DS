@@ -37,7 +37,7 @@ void ExtractFeatureHog(const cv::Mat &in,
 		for(int j = 0; j < len; j++){
 			ft(j) = hog[j];
 		}
-		delete hog;
+		delete []hog;
 		fts.push_back(ft);
 	}
 }
