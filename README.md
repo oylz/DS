@@ -15,7 +15,7 @@ tensorflow|1.4
 
 # 3. prepare data
 
-> change the var values at lines(335-337) in Main.cpp:
+> change the var values at [lines160-162 in Main.cpp](https://github.com/oylz/DS/blob/master/Main.cpp#L160TL162):
 ```
 _imgDir = "/home/xyz/code1/xyz/img1/"; // MOT format
 
