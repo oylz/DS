@@ -1,4 +1,4 @@
-# DS
+**DS**
 
 C++ implementation of Simple Online Realtime Tracking with a Deep Association Metric
 
@@ -34,7 +34,6 @@ _imgCount = 680;  // frames count
 >tensorflow build:
 ```
 (1) ./configure
----
 (2) bazel build -c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.2 --config=cuda  tensorflow:libtensorflow_cc.so
 ```
 
