@@ -1,4 +1,4 @@
-**DS**~~deepsort~~
+**DS**(~~deepsort~cpp version~)
 
 C++ implementation of Simple Online Realtime Tracking with a Deep Association Metric
 
