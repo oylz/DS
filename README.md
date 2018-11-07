@@ -2,7 +2,7 @@
 
 C++ implementation of Simple Online Realtime Tracking with a Deep Association Metric
 
-# 1. depencies
+# 1. dependencies
 component|version
 -|-
 eigen|3.3
