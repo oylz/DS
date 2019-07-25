@@ -363,7 +363,9 @@ bool fhog( float *M, float *O, float *H, int h, int w, int binSize,
   if(sz <= 0){
      return false;
   }
-  R1 = (float*) wrCalloc(wb*hb*nOrients*2,sizeof(float));
+  // __mm_storeu_ps will write 128 bits to address of pointer.
+  // It would cause memory corruption if memory allocated here is not large enough
+  R1 = (float*) wrCalloc(wb*hb*nOrients*2 + 4 ,sizeof(float));
   gradHist( M, O, R1, h, w, binSize, nOrients*2, softBin, true );
   // compute unnormalized contrast insensitive histograms
   R2 = (float*) wrCalloc(wb*hb*nOrients,sizeof(float));
